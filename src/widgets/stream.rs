@@ -1,7 +1,8 @@
 use crate::services::Services;
 use crate::widgets::avatar::Avatar;
 use eframe::epaint::Vec2;
-use egui::{Color32, Image, Rect, Response, RichText, Rounding, Sense, Ui, Widget};
+use egui::{Color32, Image, Label, Rect, Response, RichText, Rounding, Sense, TextWrapMode, Ui, Widget};
+use log::info;
 use nostr_sdk::{Alphabet, Event, PublicKey, SingleLetterTag, TagKind};
 
 pub struct StreamEvent<'a> {
@@ -30,22 +31,27 @@ impl Widget for StreamEvent<'_> {
                 Some(t) => PublicKey::from_hex(t.as_vec().get(1).unwrap()).unwrap(),
                 None => self.event.author()
             };
-            match self.picture {
-                Some(picture) => picture.rounding(Rounding::same(12.)).ui(ui),
+            let w = ui.available_width();
+            let h = (w / 16.0) * 9.0;
+            let img_size = Vec2::new(w, h);
+
+            let img = match self.picture {
+                Some(picture) => picture.fit_to_exact_size(img_size).rounding(Rounding::same(12.)).sense(Sense::click()).ui(ui),
                 None => {
-                    let w = ui.available_width();
-                    let h = (w / 16.0) * 9.0;
-                    let (response, painter) = ui.allocate_painter(Vec2::new(w, h), Sense::hover());
+                    let (response, painter) = ui.allocate_painter(img_size, Sense::click());
                     painter.rect_filled(Rect::EVERYTHING, Rounding::same(12.), Color32::from_rgb(200, 200, 200));
                     response
                 }
             };
+            if img.clicked() {
+                info!("Navigating to {}", self.event.id);
+            }
             ui.horizontal(|ui| {
                 ui.add(Avatar::public_key(self.services, &host).size(40.));
-                ui.label(RichText::new(self.event.get_tag_content(TagKind::Title).unwrap_or("Unknown"))
+                let title = RichText::new(self.event.get_tag_content(TagKind::Title).unwrap_or("Unknown"))
                     .size(16.)
-                    .color(Color32::WHITE)
-                );
+                    .color(Color32::WHITE);
+                ui.add(Label::new(title).wrap_mode(TextWrapMode::Truncate));
             })
         }).response
     }

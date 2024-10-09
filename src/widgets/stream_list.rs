@@ -1,6 +1,7 @@
 use crate::services::Services;
 use crate::widgets::stream::StreamEvent;
 use egui::{Frame, Margin, Response, Ui, Widget};
+use egui_extras::Column;
 use nostr_sdk::Event;
 
 pub struct StreamList<'a> {
