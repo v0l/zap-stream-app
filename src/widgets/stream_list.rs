@@ -1,16 +1,15 @@
-use crate::services::Services;
+use crate::route::RouteServices;
 use crate::widgets::stream::StreamEvent;
 use egui::{Frame, Margin, Response, Ui, Widget};
-use egui_extras::Column;
-use nostr_sdk::Event;
+use nostrdb::Note;
 
 pub struct StreamList<'a> {
-    streams: &'a Vec<Event>,
-    services: &'a Services,
+    streams: &'a Vec<Note<'a>>,
+    services: &'a RouteServices<'a>,
 }
 
 impl<'a> StreamList<'a> {
-    pub fn new(streams: &'a Vec<Event>, services: &'a Services) -> Self {
+    pub fn new(streams: &'a Vec<Note<'a>>, services: &'a RouteServices) -> Self {
         Self { streams, services }
     }
 }

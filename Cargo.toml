@@ -6,12 +6,15 @@ edition = "2021"
 [dependencies]
 tokio = "1.40.0"
 
-egui = { git = "https://github.com/emilk/egui", rev = "fcb7764e48ce00f8f8e58da10f937410d65b0bfb" }
-eframe = { git = "https://github.com/emilk/egui", rev = "fcb7764e48ce00f8f8e58da10f937410d65b0bfb", package = "eframe", default-features = false, features = ["wgpu", "wayland", "x11", "android-native-activity"] }
-nostrdb = { git = "https://github.com/damus-io/nostrdb-rs", rev = "6d22af6d5159be4c9e4579f8c9d3af836e0d470a" }
-nostr-sdk = { version = "0.34.0", features = ["all-nips"] }
-egui_nav = { git = "https://github.com/damus-io/egui-nav", branch = "egui-0.28" }
-egui_extras = { git = "https://github.com/emilk/egui", rev = "fcb7764e48ce00f8f8e58da10f937410d65b0bfb", package = "egui_extras", features = ["all_loaders"] }
+egui = { version = "0.29.1" }
+eframe = { version = "0.29.1", default-features = false, features = ["glow", "wgpu", "wayland", "x11", "android-native-activity"] }
+nostrdb = { git = "https://github.com/damus-io/nostrdb-rs", version = "0.3.4" }
+nostr-sdk = { version = "0.35.0", features = ["all-nips"] }
+egui_extras = { version = "0.29.1", features = ["all_loaders"] }
 image = { version = "0.25", features = ["jpeg", "png", "webp"] }
 log = "0.4.22"
 pretty_env_logger = "0.5.0"
+egui_inbox = "0.6.0"
+bech32 = "0.11.0"
+libc = "0.2.158"
+egui-video = { path = "../egui-video" }

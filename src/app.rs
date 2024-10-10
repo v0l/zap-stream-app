@@ -1,20 +1,18 @@
-use crate::services::Services;
-use crate::widget::NostrWidget;
-use crate::widgets::header::Header;
-use crate::widgets::stream_list::StreamList;
+use crate::route::Router;
 use eframe::{App, CreationContext, Frame};
 use egui::{Color32, Context, ScrollArea};
+use egui_inbox::UiInbox;
+use log::warn;
 use nostr_sdk::database::{MemoryDatabase, MemoryDatabaseOptions};
-use nostr_sdk::{Client, Event, Filter, Kind, RelayPoolNotification};
-use nostrdb::{Config, Ndb, Transaction};
+use nostr_sdk::{Client, Filter, JsonUtil, Kind, RelayPoolNotification};
+use nostrdb::{Config, Ndb};
 use tokio::sync::broadcast;
 
 pub struct ZapStreamApp {
     ndb: Ndb,
     client: Client,
     notifications: broadcast::Receiver<RelayPoolNotification>,
-    events: Vec<Event>,
-    services: Services,
+    router: Router,
 }
 
 impl ZapStreamApp {
@@ -41,12 +39,13 @@ impl ZapStreamApp {
         });
         egui_extras::install_image_loaders(&cc.egui_ctx);
 
+        let inbox = UiInbox::new();
+        let ndb = Ndb::new(".", &Config::default()).unwrap();
         Self {
-            ndb: Ndb::new(".", &Config::default()).unwrap(),
+            ndb: ndb.clone(),
             client: client.clone(),
             notifications,
-            services: Services::new(client, cc.egui_ctx.clone()),
-            events: vec![],
+            router: Router::new(inbox, cc.egui_ctx.clone(), client.clone(), ndb.clone()),
         }
     }
 
@@ -54,7 +53,9 @@ impl ZapStreamApp {
         while let Ok(msg) = self.notifications.try_recv() {
             match msg {
                 RelayPoolNotification::Event { event, .. } => {
-                    self.events.push(*event);
+                    if let Err(e) = self.ndb.process_event(event.as_json().as_str()) {
+                        warn!("Failed to process event: {:?}", e);
+                    }
                 }
                 _ => {
                     // dont care
@@ -66,20 +67,17 @@ impl ZapStreamApp {
 
 impl App for ZapStreamApp {
     fn update(&mut self, ctx: &Context, frame: &mut Frame) {
-        let txn = Transaction::new(&self.ndb).expect("txn");
         self.process_nostr();
 
         let mut app_frame = egui::containers::Frame::default();
         app_frame.stroke.color = Color32::BLACK;
 
-        ctx.set_debug_on_hover(true);
+        //ctx.set_debug_on_hover(true);
+
         egui::CentralPanel::default()
             .frame(app_frame)
             .show(ctx, |ui| {
-                ScrollArea::vertical().show(ui, |ui| {
-                    ui.add(Header::new(&self.services));
-                    ui.add(StreamList::new(&self.events, &self.services));
-                });
+                self.router.show(ui)
             });
     }
 }

@@ -1,6 +1,5 @@
-use crate::services::Services;
 use egui::{Color32, Image, Rect, Response, Rounding, Sense, Ui, Vec2, Widget};
-use nostr_sdk::PublicKey;
+use crate::services::profile::ProfileService;
 
 pub struct Avatar<'a> {
     image: Option<Image<'a>>,
@@ -11,8 +10,8 @@ impl<'a> Avatar<'a> {
         Self { image: Some(img) }
     }
 
-    pub fn public_key(svc: &'a Services, pk: &PublicKey) -> Self {
-        if let Some(meta) = svc.profile.get_profile(pk) {
+    pub fn public_key(svc: &'a ProfileService, pk: &[u8; 32]) -> Self {
+        if let Some(meta) = svc.get_profile(pk) {
             if let Some(img) = &meta.picture {
                 return Self { image: Some(Image::from_uri(img.clone())) };
             }
