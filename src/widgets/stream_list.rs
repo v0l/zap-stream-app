@@ -21,7 +21,7 @@ impl Widget for StreamList<'_> {
             .show(ui, |ui| {
                 ui.vertical(|ui| {
                     ui.style_mut().spacing.item_spacing = egui::vec2(0., 20.0);
-                    for event in self.streams.iter().take(5) {
+                    for event in self.streams {
                         ui.add(StreamEvent::new(event, self.services));
                     }
                 })

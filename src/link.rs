@@ -5,22 +5,31 @@ use nostr_sdk::util::hex;
 use nostrdb::{Filter, Note};
 use std::fmt::{Display, Formatter};
 
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct NostrLink {
-    hrp: NostrLinkType,
-    id: IdOrStr,
-    kind: Option<u32>,
-    author: Option<[u8; 32]>,
-    relays: Vec<String>,
+    pub hrp: NostrLinkType,
+    pub id: IdOrStr,
+    pub kind: Option<u32>,
+    pub author: Option<[u8; 32]>,
+    pub relays: Vec<String>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq)]
 pub enum IdOrStr {
     Id([u8; 32]),
     Str(String),
 }
 
-#[derive(Clone)]
+impl Display for IdOrStr {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            IdOrStr::Id(id) => write!(f, "{}", hex::encode(id)),
+            IdOrStr::Str(str) => write!(f, "{}", str),
+        }
+    }
+}
+
+#[derive(Clone, Eq, PartialEq)]
 pub enum NostrLinkType {
     Note,
     PublicKey,
@@ -60,6 +69,22 @@ impl NostrLink {
                 author: Some(note.pubkey().clone()),
                 relays: vec![],
             }
+        }
+    }
+
+    pub fn to_tag(&self) -> Vec<String> {
+        if self.hrp == NostrLinkType::Coordinate {
+            vec!["a".to_string(), self.to_tag_value()]
+        } else {
+            vec!["e".to_string(), self.to_tag_value()]
+        }
+    }
+
+    pub fn to_tag_value(&self) -> String {
+        if self.hrp == NostrLinkType::Coordinate {
+            format!("{}:{}:{}", self.kind.unwrap(), hex::encode(self.author.unwrap()), self.id)
+        } else {
+            self.id.to_string()
         }
     }
 }

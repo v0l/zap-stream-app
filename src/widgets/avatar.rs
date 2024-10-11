@@ -1,5 +1,5 @@
-use egui::{Color32, Image, Rect, Response, Rounding, Sense, Ui, Vec2, Widget};
 use crate::services::profile::ProfileService;
+use egui::{Color32, Image, Rect, Response, Rounding, Sense, Ui, Vec2, Widget};
 
 pub struct Avatar<'a> {
     image: Option<Image<'a>>,
@@ -8,6 +8,10 @@ pub struct Avatar<'a> {
 impl<'a> Avatar<'a> {
     pub fn new(img: Image<'a>) -> Self {
         Self { image: Some(img) }
+    }
+
+    pub fn new_optional(img: Option<Image<'a>>) -> Self {
+        Self { image: img }
     }
 
     pub fn public_key(svc: &'a ProfileService, pk: &[u8; 32]) -> Self {
@@ -45,8 +49,10 @@ impl<'a> Widget for Avatar<'a> {
                 img.rounding(Rounding::same(ui.available_height())).ui(ui)
             }
             None => {
-                let (response, painter) = ui.allocate_painter(Vec2::new(32., 32.), Sense::hover());
-                painter.rect_filled(Rect::EVERYTHING, Rounding::same(32.), Color32::from_rgb(200, 200, 200));
+                let h = ui.available_height();
+                let rnd = Rounding::same(h);
+                let (response, painter) = ui.allocate_painter(Vec2::new(h,h), Sense::click());
+                painter.rect_filled(Rect::EVERYTHING, rnd, Color32::from_rgb(200, 200, 200));
                 response
             }
         }

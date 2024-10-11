@@ -1,9 +1,6 @@
-use libc::{malloc, memcpy};
 use nostr_sdk::util::hex;
-use nostrdb::{NdbStr, Note, Tag, Tags};
+use nostrdb::{NdbStr, Note, Tag};
 use std::fmt::Display;
-use std::mem::transmute;
-use std::{mem, ptr};
 
 pub trait NoteUtil {
     fn id_hex(&self) -> String;
@@ -70,4 +67,5 @@ impl<'a> Iterator for TagIterBorrow<'a> {
     }
 }
 
-pub struct OwnedNote;
+#[derive(Eq, PartialEq)]
+pub struct OwnedNote(pub u64);

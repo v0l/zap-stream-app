@@ -1,24 +1,29 @@
-use crate::route::RouteServices;
 use crate::widgets::VideoPlaceholder;
-use egui::{Response, Ui, Vec2, Widget};
+use egui::{Context, Response, Ui, Vec2, Widget};
+use egui_video::Player;
 
-pub struct StreamPlayer<'a> {
-    services: &'a mut RouteServices<'a>,
+pub struct StreamPlayer {
+    player: Option<Player>,
 }
 
-impl<'a> StreamPlayer<'a> {
-    pub fn new(services: &'a mut RouteServices<'a>) -> Self {
-        Self { services }
+impl StreamPlayer {
+    pub fn new(ctx: &Context, url: &String) -> Self {
+        Self {
+            player: Player::new(ctx, url).map_or(None, |mut f| {
+                f.start();
+                Some(f)
+            })
+        }
     }
 }
 
-impl<'a> Widget for StreamPlayer<'a> {
+impl Widget for &mut StreamPlayer {
     fn ui(self, ui: &mut Ui) -> Response {
         let w = ui.available_width();
         let h = w / 16. * 9.;
         let size = Vec2::new(w, h);
 
-        if let Some(p) = self.services.player.as_mut() {
+        if let Some(mut p) = self.player.as_mut() {
             p.ui(ui, size)
         } else {
             VideoPlaceholder.ui(ui)
