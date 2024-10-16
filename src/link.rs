@@ -42,7 +42,13 @@ pub enum NostrLinkType {
 }
 
 impl NostrLink {
-    pub fn new(hrp: NostrLinkType, id: IdOrStr, kind: Option<u32>, author: Option<[u8; 32]>, relays: Vec<String>) -> Self {
+    pub fn new(
+        hrp: NostrLinkType,
+        id: IdOrStr,
+        kind: Option<u32>,
+        author: Option<[u8; 32]>,
+        relays: Vec<String>,
+    ) -> Self {
         Self {
             hrp,
             id,
@@ -56,7 +62,14 @@ impl NostrLink {
         if note.kind() >= 30_000 && note.kind() < 40_000 {
             Self {
                 hrp: NostrLinkType::Coordinate,
-                id: IdOrStr::Str(note.get_tag_value("d").unwrap().variant().str().unwrap().to_string()),
+                id: IdOrStr::Str(
+                    note.get_tag_value("d")
+                        .unwrap()
+                        .variant()
+                        .str()
+                        .unwrap()
+                        .to_string(),
+                ),
                 kind: Some(note.kind()),
                 author: Some(note.pubkey().clone()),
                 relays: vec![],
@@ -82,7 +95,12 @@ impl NostrLink {
 
     pub fn to_tag_value(&self) -> String {
         if self.hrp == NostrLinkType::Coordinate {
-            format!("{}:{}:{}", self.kind.unwrap(), hex::encode(self.author.unwrap()), self.id)
+            format!(
+                "{}:{}:{}",
+                self.kind.unwrap(),
+                hex::encode(self.author.unwrap()),
+                self.id
+            )
         } else {
             self.id.to_string()
         }
@@ -93,18 +111,17 @@ impl TryInto<Filter> for &NostrLink {
     type Error = ();
     fn try_into(self) -> Result<Filter, Self::Error> {
         match self.hrp {
-            NostrLinkType::Coordinate => {
-                Ok(Filter::new()
-                    .tags([match self.id {
+            NostrLinkType::Coordinate => Ok(Filter::new()
+                .tags(
+                    [match self.id {
                         IdOrStr::Str(ref s) => s.to_owned(),
-                        IdOrStr::Id(ref i) => hex::encode(i)
-                    }], 'd')
-                    .build())
-            }
-            NostrLinkType::Event | NostrLinkType::Note => {
-                Ok(Filter::new().build())
-            }
-            _ => Err(())
+                        IdOrStr::Id(ref i) => hex::encode(i),
+                    }],
+                    'd',
+                )
+                .build()),
+            NostrLinkType::Event | NostrLinkType::Note => Ok(Filter::new().build()),
+            _ => Err(()),
         }
     }
 }
@@ -133,12 +150,17 @@ impl Display for NostrLink {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self.hrp {
             NostrLinkType::Note | NostrLinkType::PrivateKey | NostrLinkType::PublicKey => {
-                Ok(bech32::encode_to_fmt::<NoChecksum, Formatter>(f, self.hrp.to_hrp(), match &self.id {
-                    IdOrStr::Str(s) => s.as_bytes(),
-                    IdOrStr::Id(i) => i
-                }).map_err(|e| std::fmt::Error)?)
+                Ok(bech32::encode_to_fmt::<NoChecksum, Formatter>(
+                    f,
+                    self.hrp.to_hrp(),
+                    match &self.id {
+                        IdOrStr::Str(s) => s.as_bytes(),
+                        IdOrStr::Id(i) => i,
+                    },
+                )
+                .map_err(|e| std::fmt::Error)?)
             }
-            NostrLinkType::Event | NostrLinkType::Profile | NostrLinkType::Coordinate => todo!()
+            NostrLinkType::Event | NostrLinkType::Profile | NostrLinkType::Coordinate => todo!(),
         }
     }
 }

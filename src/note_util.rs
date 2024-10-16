@@ -35,7 +35,6 @@ impl<'a> NoteUtil for Note<'a> {
     }
 }
 
-
 #[derive(Debug, Clone)]
 pub struct TagIterBorrow<'a> {
     tag: &'a Tag<'a>,

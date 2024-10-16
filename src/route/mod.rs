@@ -4,7 +4,6 @@ use crate::route;
 use crate::route::home::HomePage;
 use crate::route::stream::StreamPage;
 use crate::services::ndb_wrapper::NDBWrapper;
-use crate::services::profile::ProfileService;
 use crate::widgets::{Header, NostrWidget, StreamList};
 use egui::{Context, Response, ScrollArea, Ui, Widget};
 use egui_inbox::{UiInbox, UiInboxSender};
@@ -15,8 +14,8 @@ use nostr_sdk::{Client, Kind, PublicKey};
 use nostrdb::{Filter, Ndb, Note, Transaction};
 use std::borrow::Borrow;
 
-mod stream;
 mod home;
+mod stream;
 
 #[derive(PartialEq)]
 pub enum Routes {
@@ -45,7 +44,6 @@ pub struct Router {
     router: UiInbox<Routes>,
 
     ctx: Context,
-    profile_service: ProfileService,
     ndb: NDBWrapper,
     login: Option<[u8; 32]>,
     client: Client,
@@ -58,7 +56,6 @@ impl Router {
             current_widget: None,
             router: UiInbox::new(),
             ctx: ctx.clone(),
-            profile_service: ProfileService::new(client.clone(), ctx.clone()),
             ndb: NDBWrapper::new(ctx.clone(), ndb.clone(), client.clone()),
             client,
             login: None,
@@ -75,7 +72,7 @@ impl Router {
                 let w = StreamPage::new_from_link(&self.ndb, tx, link.clone());
                 self.current_widget = Some(Box::new(w));
             }
-            _ => warn!("Not implemented")
+            _ => warn!("Not implemented"),
         }
         self.current = route;
     }
@@ -87,10 +84,8 @@ impl Router {
         while let Some(r) = self.router.read(ui).next() {
             if let Routes::Action(a) = &r {
                 match a {
-                    RouteAction::Login(k) => {
-                        self.login = Some(k.clone())
-                    }
-                    _ => info!("Not implemented")
+                    RouteAction::Login(k) => self.login = Some(k.clone()),
+                    _ => info!("Not implemented"),
                 }
             } else {
                 self.load_widget(r, &tx);
@@ -104,32 +99,32 @@ impl Router {
 
         let svc = RouteServices {
             context: self.ctx.clone(),
-            profile: &self.profile_service,
             router: self.router.sender(),
-            ndb: self.ndb.clone(),
+            ndb: &self.ndb,
             tx: &tx,
             login: &self.login,
         };
 
         // display app
-        ScrollArea::vertical().show(ui, |ui| {
-            ui.add(Header::new(&svc));
-            if let Some(w) = self.current_widget.as_mut() {
-                w.render(ui, &svc)
-            } else {
-                ui.label("No widget")
-            }
-        }).inner
+        ScrollArea::vertical()
+            .show(ui, |ui| {
+                Header::new().render(ui, &svc);
+                if let Some(w) = self.current_widget.as_mut() {
+                    w.render(ui, &svc)
+                } else {
+                    ui.label("No widget")
+                }
+            })
+            .inner
     }
 }
 
 pub struct RouteServices<'a> {
-    pub context: Context, //cloned
+    pub context: Context,              //cloned
     pub router: UiInboxSender<Routes>, //cloned
-    pub ndb: NDBWrapper, //cloned
 
-    pub profile: &'a ProfileService, //ref
-    pub tx: &'a Transaction, //ref
+    pub ndb: &'a NDBWrapper,         //ref
+    pub tx: &'a Transaction,         //ref
     pub login: &'a Option<[u8; 32]>, //ref
 }
 

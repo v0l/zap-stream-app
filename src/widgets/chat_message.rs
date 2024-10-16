@@ -20,12 +20,11 @@ impl<'a> Widget for ChatMessage<'a> {
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing = Vec2::new(8., 2.);
             let author = self.ev.pubkey();
-            Profile::new(author, self.services)
-                .size(24.)
-                .ui(ui);
+            Profile::new(author, self.services).size(24.).ui(ui);
 
             let content = self.ev.content();
             ui.label(content);
-        }).response
+        })
+        .response
     }
 }

@@ -1,7 +1,7 @@
 use crate::link::NostrLink;
 use crate::note_util::{NoteUtil, OwnedNote};
 use crate::route::RouteServices;
-use crate::services::ndb_wrapper::NDBWrapper;
+use crate::services::ndb_wrapper::{NDBWrapper, SubWrapper};
 use crate::stream_info::StreamInfo;
 use crate::widgets::{Chat, NostrWidget, StreamPlayer};
 use egui::{Color32, Label, Response, RichText, TextWrapMode, Ui, Widget};
@@ -13,20 +13,20 @@ pub struct StreamPage {
     event: Option<OwnedNote>,
     player: Option<StreamPlayer>,
     chat: Option<Chat>,
-    sub: Subscription,
+    sub: SubWrapper,
 }
 
 impl StreamPage {
     pub fn new_from_link(ndb: &NDBWrapper, tx: &Transaction, link: NostrLink) -> Self {
         let f: Filter = link.borrow().try_into().unwrap();
-        let f = [
-            f.limit_mut(1)
-        ];
-        let (sub, events) = ndb.subscribe_with_results(&f, tx, 1);
+        let f = [f.limit_mut(1)];
+        let (sub, events) = ndb.subscribe_with_results("streams", &f, tx, 1);
         Self {
             link,
             sub,
-            event: events.first().map_or(None, |n| Some(OwnedNote(n.note_key.as_u64()))),
+            event: events
+                .first()
+                .map_or(None, |n| Some(OwnedNote(n.note_key.as_u64()))),
             chat: None,
             player: None,
         }
@@ -35,13 +35,15 @@ impl StreamPage {
 
 impl NostrWidget for StreamPage {
     fn render(&mut self, ui: &mut Ui, services: &RouteServices<'_>) -> Response {
-        let poll = services.ndb.poll(self.sub, 1);
+        let poll = services.ndb.poll(&self.sub, 1);
         if let Some(k) = poll.first() {
             self.event = Some(OwnedNote(k.as_u64()))
         }
 
         let event = if let Some(k) = &self.event {
-            services.ndb.get_note_by_key(services.tx, NoteKey::new(k.0))
+            services
+                .ndb
+                .get_note_by_key(services.tx, NoteKey::new(k.0))
                 .map_or(None, |f| Some(f))
         } else {
             None
@@ -62,8 +64,8 @@ impl NostrWidget for StreamPage {
                 Some(s) => s.variant().str().unwrap_or("Unknown"),
                 None => "Unknown",
             })
-                .size(16.)
-                .color(Color32::WHITE);
+            .size(16.)
+            .color(Color32::WHITE);
             ui.add(Label::new(title).wrap_mode(TextWrapMode::Truncate));
 
             if self.chat.is_none() {

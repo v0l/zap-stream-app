@@ -12,7 +12,7 @@ impl StreamPlayer {
             player: Player::new(ctx, url).map_or(None, |mut f| {
                 f.start();
                 Some(f)
-            })
+            }),
         }
     }
 }

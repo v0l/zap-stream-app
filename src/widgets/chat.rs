@@ -1,17 +1,16 @@
 use crate::link::NostrLink;
 use crate::note_util::OwnedNote;
 use crate::route::RouteServices;
-use crate::services::ndb_wrapper::NDBWrapper;
+use crate::services::ndb_wrapper::{NDBWrapper, SubWrapper};
 use crate::widgets::chat_message::ChatMessage;
 use crate::widgets::NostrWidget;
 use egui::{Response, ScrollArea, Ui, Widget};
-use nostrdb::{Filter, Note, NoteKey, Subscription, Transaction};
-use std::borrow::Borrow;
+use nostrdb::{Filter, Note, NoteKey, Transaction};
 
 pub struct Chat {
     link: NostrLink,
     events: Vec<OwnedNote>,
-    sub: Subscription,
+    sub: SubWrapper,
 }
 
 impl Chat {
@@ -22,33 +21,45 @@ impl Chat {
             .build();
         let filter = [filter];
 
-        let (sub, events) = ndb.subscribe_with_results(&filter, tx, 500);
+        let (sub, events) = ndb.subscribe_with_results("live-chat", &filter, tx, 500);
 
         Self {
             link,
             sub,
-            events: events.iter().map(|n| OwnedNote(n.note_key.as_u64())).collect(),
+            events: events
+                .iter()
+                .map(|n| OwnedNote(n.note_key.as_u64()))
+                .collect(),
         }
     }
 }
 
 impl NostrWidget for Chat {
     fn render(&mut self, ui: &mut Ui, services: &RouteServices<'_>) -> Response {
-        let poll = services.ndb.poll(self.sub, 500);
-        poll.iter().for_each(|n| self.events.push(OwnedNote(n.as_u64())));
+        let poll = services.ndb.poll(&self.sub, 500);
+        poll.iter()
+            .for_each(|n| self.events.push(OwnedNote(n.as_u64())));
 
-        let events: Vec<Note> = self.events.iter().map_while(|n|
-            services.ndb
-                .get_note_by_key(services.tx, NoteKey::new(n.0))
-                .map_or(None, |n| Some(n))
-        ).collect();
+        let events: Vec<Note> = self
+            .events
+            .iter()
+            .map_while(|n| {
+                services
+                    .ndb
+                    .get_note_by_key(services.tx, NoteKey::new(n.0))
+                    .map_or(None, |n| Some(n))
+            })
+            .collect();
 
-        ScrollArea::vertical().show(ui, |ui| {
-            ui.vertical(|ui| {
-                for ev in events {
-                    ChatMessage::new(&ev, services).ui(ui);
-                }
-            }).response
-        }).inner
+        ScrollArea::vertical()
+            .show(ui, |ui| {
+                ui.vertical(|ui| {
+                    for ev in events {
+                        ChatMessage::new(&ev, services).ui(ui);
+                    }
+                })
+                .response
+            })
+            .inner
     }
 }

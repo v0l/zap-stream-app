@@ -25,6 +25,7 @@ impl Widget for StreamList<'_> {
                         ui.add(StreamEvent::new(event, self.services));
                     }
                 })
-            }).response
+            })
+            .response
     }
 }

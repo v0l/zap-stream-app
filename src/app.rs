@@ -14,13 +14,18 @@ pub struct ZapStreamApp {
 
 impl ZapStreamApp {
     pub fn new(cc: &CreationContext) -> Self {
-        let client = Client::builder().database(MemoryDatabase::with_opts(Default::default())).build();
+        let client = Client::builder()
+            .database(MemoryDatabase::with_opts(Default::default()))
+            .build();
         let notifications = client.notifications();
 
         let ctx_clone = cc.egui_ctx.clone();
         let client_clone = client.clone();
         tokio::spawn(async move {
-            client_clone.add_relay("wss://nos.lol").await.expect("Failed to add relay");
+            client_clone
+                .add_relay("wss://nos.lol")
+                .await
+                .expect("Failed to add relay");
             client_clone.connect().await;
             let mut notifications = client_clone.notifications();
             while let Ok(_) = notifications.recv().await {
@@ -48,8 +53,6 @@ impl App for ZapStreamApp {
 
         egui::CentralPanel::default()
             .frame(app_frame)
-            .show(ctx, |ui| {
-                self.router.show(ui)
-            });
+            .show(ctx, |ui| self.router.show(ui));
     }
 }

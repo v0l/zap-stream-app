@@ -18,3 +18,7 @@ egui_inbox = "0.6.0"
 bech32 = "0.11.0"
 libc = "0.2.158"
 egui-video = { git = "https://github.com/v0l/egui-video.git", rev = "4766d939ce4d34b5a3a57b2fbe750ea10f389f39" }
+uuid = { version = "1.11.0", features = ["v4"] }
+chrono = "0.4.38"
+anyhow = "1.0.89"
+async-trait = "0.1.83"

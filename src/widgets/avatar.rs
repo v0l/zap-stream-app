@@ -1,26 +1,35 @@
-use crate::services::profile::ProfileService;
+use crate::route::RouteServices;
+use crate::services::ndb_wrapper::SubWrapper;
 use egui::{Color32, Image, Rect, Response, Rounding, Sense, Ui, Vec2, Widget};
 
 pub struct Avatar<'a> {
     image: Option<Image<'a>>,
+    sub: Option<SubWrapper>,
 }
 
 impl<'a> Avatar<'a> {
     pub fn new(img: Image<'a>) -> Self {
-        Self { image: Some(img) }
+        Self {
+            image: Some(img),
+            sub: None,
+        }
     }
 
     pub fn new_optional(img: Option<Image<'a>>) -> Self {
-        Self { image: img }
+        Self {
+            image: img,
+            sub: None,
+        }
     }
 
-    pub fn public_key(svc: &'a ProfileService, pk: &[u8; 32]) -> Self {
-        if let Some(meta) = svc.get_profile(pk) {
-            if let Some(img) = &meta.picture {
-                return Self { image: Some(Image::from_uri(img.clone())) };
-            }
+    pub fn pubkey(pk: &[u8; 32], svc: &RouteServices<'a>) -> Self {
+        let (img, sub) = svc.ndb.fetch_profile(svc.tx, pk);
+        Self {
+            image: img
+                .map_or(None, |p| p.picture())
+                .map(|p| Image::from_uri(p)),
+            sub,
         }
-        Self { image: None }
     }
 
     pub fn max_size(mut self, size: f32) -> Self {
@@ -45,13 +54,11 @@ impl<'a> Avatar<'a> {
 impl<'a> Widget for Avatar<'a> {
     fn ui(self, ui: &mut Ui) -> Response {
         match self.image {
-            Some(img) => {
-                img.rounding(Rounding::same(ui.available_height())).ui(ui)
-            }
+            Some(img) => img.rounding(Rounding::same(ui.available_height())).ui(ui),
             None => {
                 let h = ui.available_height();
                 let rnd = Rounding::same(h);
-                let (response, painter) = ui.allocate_painter(Vec2::new(h,h), Sense::click());
+                let (response, painter) = ui.allocate_painter(Vec2::new(h, h), Sense::click());
                 painter.rect_filled(Rect::EVERYTHING, rnd, Color32::from_rgb(200, 200, 200));
                 response
             }
