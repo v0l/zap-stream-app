@@ -3,9 +3,8 @@ use crate::route::RouteServices;
 use crate::services::ndb_wrapper::{NDBWrapper, SubWrapper};
 use crate::widgets;
 use crate::widgets::NostrWidget;
-use egui::{Response, Ui, Widget};
-use log::{error, info};
-use nostrdb::{Filter, Ndb, Note, NoteKey, Transaction};
+use egui::{Response, ScrollArea, Ui, Widget};
+use nostrdb::{Filter, Note, NoteKey, Transaction};
 
 pub struct HomePage {
     sub: SubWrapper,
@@ -40,7 +39,9 @@ impl NostrWidget for HomePage {
             .map_while(|f| f.map_or(None, |f| Some(f)))
             .collect();
 
-        info!("HomePage events: {}", events.len());
-        widgets::StreamList::new(&events, &services).ui(ui)
+        ScrollArea::vertical()
+            .show(ui, |ui| {
+                widgets::StreamList::new(&events, &services).ui(ui)
+            }).inner
     }
 }

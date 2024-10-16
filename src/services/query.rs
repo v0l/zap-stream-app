@@ -2,6 +2,7 @@ use anyhow::Error;
 use chrono::Utc;
 use log::{error, info};
 use nostr_sdk::prelude::StreamExt;
+use nostr_sdk::Kind::Metadata;
 use nostr_sdk::{Client, Filter, SubscriptionId};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;
@@ -56,12 +57,24 @@ impl Query {
 
     /// Return next query batch
     pub fn next(&mut self) -> Option<QueryTrace> {
-        let next: Vec<QueryFilter> = self.queue.drain().collect();
+        let mut next: Vec<QueryFilter> = self.queue.drain().collect();
         if next.len() == 0 {
             return None;
         }
         let now = Utc::now();
         let id = Uuid::new_v4();
+
+        // force profile queries into single filter
+        if next.iter().all(|f| if let Some(k) = &f.kinds {
+            k.len() == 1 && k.first().unwrap().as_u16() == 0
+        } else {
+            false
+        }) {
+            next = vec![Filter::new()
+                .kinds([Metadata])
+                .authors(next.iter().flat_map(|f| f.authors.as_ref().unwrap().clone()))
+            ]
+        }
         Some(QueryTrace {
             id,
             filters: next,
@@ -145,6 +158,10 @@ where
     where
         F: Into<Vec<QueryFilter>>,
     {
+        self.queue_into_queries.send(QueueDefer {
+            id: id.to_string(),
+            filters: filters.into(),
+        }).unwrap()
     }
 }
 

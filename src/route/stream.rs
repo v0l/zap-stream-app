@@ -1,11 +1,11 @@
 use crate::link::NostrLink;
-use crate::note_util::{NoteUtil, OwnedNote};
+use crate::note_util::OwnedNote;
 use crate::route::RouteServices;
 use crate::services::ndb_wrapper::{NDBWrapper, SubWrapper};
 use crate::stream_info::StreamInfo;
-use crate::widgets::{Chat, NostrWidget, StreamPlayer};
-use egui::{Color32, Label, Response, RichText, TextWrapMode, Ui, Widget};
-use nostrdb::{Filter, NoteKey, Subscription, Transaction};
+use crate::widgets::{Chat, NostrWidget, StreamPlayer, StreamTitle, WriteChat};
+use egui::{Response, Ui, Vec2, Widget};
+use nostrdb::{Filter, NoteKey, Transaction};
 use std::borrow::Borrow;
 
 pub struct StreamPage {
@@ -14,6 +14,7 @@ pub struct StreamPage {
     player: Option<StreamPlayer>,
     chat: Option<Chat>,
     sub: SubWrapper,
+    new_msg: WriteChat,
 }
 
 impl StreamPage {
@@ -29,6 +30,7 @@ impl StreamPage {
                 .map_or(None, |n| Some(OwnedNote(n.note_key.as_u64()))),
             chat: None,
             player: None,
+            new_msg: WriteChat::new(),
         }
     }
 }
@@ -51,7 +53,7 @@ impl NostrWidget for StreamPage {
         if let Some(event) = event {
             if let Some(stream) = event.stream() {
                 if self.player.is_none() {
-                    let p = StreamPlayer::new(ui.ctx(), &stream);
+                    let p = StreamPlayer::new(ui.ctx(), &stream.to_string());
                     self.player = Some(p);
                 }
             }
@@ -59,25 +61,27 @@ impl NostrWidget for StreamPage {
             if let Some(player) = &mut self.player {
                 player.ui(ui);
             }
-
-            let title = RichText::new(match event.get_tag_value("title") {
-                Some(s) => s.variant().str().unwrap_or("Unknown"),
-                None => "Unknown",
-            })
-            .size(16.)
-            .color(Color32::WHITE);
-            ui.add(Label::new(title).wrap_mode(TextWrapMode::Truncate));
+            StreamTitle::new(&event).render(ui, services);
 
             if self.chat.is_none() {
-                let chat = Chat::new(self.link.clone(), &services.ndb, services.tx);
+                let ok = OwnedNote(event.key().unwrap().as_u64());
+                let chat = Chat::new(self.link.clone(), ok, &services.ndb, services.tx);
                 self.chat = Some(chat);
             }
 
-            if let Some(c) = self.chat.as_mut() {
-                c.render(ui, services)
-            } else {
-                ui.label("Loading..")
-            }
+            let chat_h = 60.0;
+            let w = ui.available_width();
+            let h = ui.available_height();
+            ui.allocate_ui(Vec2::new(w, h - chat_h), |ui| {
+                if let Some(c) = self.chat.as_mut() {
+                    c.render(ui, services)
+                } else {
+                    ui.label("Loading..")
+                }
+            });
+            ui.allocate_ui(Vec2::new(w, chat_h), |ui| {
+                self.new_msg.render(ui, services)
+            }).response
         } else {
             ui.label("Loading..")
         }

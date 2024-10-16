@@ -1,6 +1,6 @@
 use crate::route::Router;
 use eframe::{App, CreationContext, Frame};
-use egui::{Color32, Context};
+use egui::{Color32, Context, Pos2, Rect, Rounding};
 use nostr_sdk::database::MemoryDatabase;
 use nostr_sdk::{Client, RelayPoolNotification};
 use nostrdb::{Config, Ndb};
@@ -53,6 +53,8 @@ impl App for ZapStreamApp {
 
         egui::CentralPanel::default()
             .frame(app_frame)
-            .show(ctx, |ui| self.router.show(ui));
+            .show(ctx, |ui| {
+                self.router.show(ui);
+            });
     }
 }

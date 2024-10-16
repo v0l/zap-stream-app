@@ -15,7 +15,7 @@ impl Header {
 
 impl NostrWidget for Header {
     fn render(&mut self, ui: &mut Ui, services: &RouteServices<'_>) -> Response {
-        let logo_bytes = include_bytes!("../logo.svg");
+        let logo_bytes = include_bytes!("../resources/logo.svg");
         Frame::none()
             .outer_margin(Margin::symmetric(16., 8.))
             .show(ui, |ui| {

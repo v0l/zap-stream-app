@@ -112,6 +112,8 @@ impl TryInto<Filter> for &NostrLink {
     fn try_into(self) -> Result<Filter, Self::Error> {
         match self.hrp {
             NostrLinkType::Coordinate => Ok(Filter::new()
+                .kinds([self.kind.unwrap() as u64])
+                .authors([&self.author.unwrap()])
                 .tags(
                     [match self.id {
                         IdOrStr::Str(ref s) => s.to_owned(),

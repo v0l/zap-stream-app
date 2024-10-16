@@ -1,10 +1,11 @@
 use crate::route::RouteServices;
 use crate::services::ndb_wrapper::SubWrapper;
-use egui::{Color32, Image, Rect, Response, Rounding, Sense, Ui, Vec2, Widget};
+use egui::{Color32, Image, Pos2, Response, Rounding, Sense, Ui, Vec2, Widget};
 
 pub struct Avatar<'a> {
     image: Option<Image<'a>>,
     sub: Option<SubWrapper>,
+    size: Option<f32>,
 }
 
 impl<'a> Avatar<'a> {
@@ -12,6 +13,7 @@ impl<'a> Avatar<'a> {
         Self {
             image: Some(img),
             sub: None,
+            size: None,
         }
     }
 
@@ -19,6 +21,7 @@ impl<'a> Avatar<'a> {
         Self {
             image: img,
             sub: None,
+            size: None,
         }
     }
 
@@ -27,39 +30,27 @@ impl<'a> Avatar<'a> {
         Self {
             image: img
                 .map_or(None, |p| p.picture())
-                .map(|p| Image::from_uri(p)),
+                .map(|p| svc.img_cache.load(p)),
             sub,
+            size: None,
         }
     }
 
-    pub fn max_size(mut self, size: f32) -> Self {
-        self.image = if let Some(i) = self.image {
-            Some(i.max_height(size))
-        } else {
-            None
-        };
-        self
-    }
-
     pub fn size(mut self, size: f32) -> Self {
-        self.image = if let Some(i) = self.image {
-            Some(i.fit_to_exact_size(Vec2::new(size, size)))
-        } else {
-            None
-        };
+        self.size = Some(size);
         self
     }
 }
 
 impl<'a> Widget for Avatar<'a> {
     fn ui(self, ui: &mut Ui) -> Response {
+        let size_v = self.size.unwrap_or(40.);
+        let size = Vec2::new(size_v, size_v);
         match self.image {
-            Some(img) => img.rounding(Rounding::same(ui.available_height())).ui(ui),
+            Some(img) => img.fit_to_exact_size(size).rounding(Rounding::same(size_v)).ui(ui),
             None => {
-                let h = ui.available_height();
-                let rnd = Rounding::same(h);
-                let (response, painter) = ui.allocate_painter(Vec2::new(h, h), Sense::click());
-                painter.rect_filled(Rect::EVERYTHING, rnd, Color32::from_rgb(200, 200, 200));
+                let (response, painter) = ui.allocate_painter(size, Sense::click());
+                painter.circle_filled(Pos2::new(size_v / 2., size_v / 2.), size_v / 2., Color32::from_rgb(200, 200, 200));
                 response
             }
         }

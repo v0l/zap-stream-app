@@ -2,19 +2,22 @@ use crate::link::NostrLink;
 use crate::note_util::OwnedNote;
 use crate::route::RouteServices;
 use crate::services::ndb_wrapper::{NDBWrapper, SubWrapper};
+use crate::stream_info::StreamInfo;
 use crate::widgets::chat_message::ChatMessage;
 use crate::widgets::NostrWidget;
-use egui::{Response, ScrollArea, Ui, Widget};
+use egui::{Frame, Margin, Response, ScrollArea, Ui, Widget};
+use itertools::Itertools;
 use nostrdb::{Filter, Note, NoteKey, Transaction};
 
 pub struct Chat {
     link: NostrLink,
+    stream: OwnedNote,
     events: Vec<OwnedNote>,
     sub: SubWrapper,
 }
 
 impl Chat {
-    pub fn new(link: NostrLink, ndb: &NDBWrapper, tx: &Transaction) -> Self {
+    pub fn new(link: NostrLink, stream: OwnedNote, ndb: &NDBWrapper, tx: &Transaction) -> Self {
         let filter = Filter::new()
             .kinds([1_311])
             .tags([link.to_tag_value()], 'a')
@@ -26,6 +29,7 @@ impl Chat {
         Self {
             link,
             sub,
+            stream,
             events: events
                 .iter()
                 .map(|n| OwnedNote(n.note_key.as_u64()))
@@ -51,15 +55,25 @@ impl NostrWidget for Chat {
             })
             .collect();
 
+        let stream = services.ndb
+            .get_note_by_key(services.tx, NoteKey::new(self.stream.0))
+            .unwrap();
+
         ScrollArea::vertical()
+            .stick_to_bottom(true)
             .show(ui, |ui| {
-                ui.vertical(|ui| {
-                    for ev in events {
-                        ChatMessage::new(&ev, services).ui(ui);
-                    }
-                })
-                .response
-            })
-            .inner
+                Frame::none()
+                    .outer_margin(Margin::symmetric(12., 8.))
+                    .show(ui, |ui| {
+                        ui.vertical(|ui| {
+                            ui.spacing_mut().item_spacing.y = 8.0;
+                            for ev in events.iter().sorted_by(|a, b| {
+                                a.starts().cmp(&b.starts())
+                            }) {
+                                ChatMessage::new(&stream, &ev, services).ui(ui);
+                            }
+                        })
+                    }).response
+            }).inner
     }
 }

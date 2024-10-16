@@ -3,6 +3,7 @@ use crate::note_util::OwnedNote;
 use crate::route;
 use crate::route::home::HomePage;
 use crate::route::stream::StreamPage;
+use crate::services::image_cache::ImageCache;
 use crate::services::ndb_wrapper::NDBWrapper;
 use crate::widgets::{Header, NostrWidget, StreamList};
 use egui::{Context, Response, ScrollArea, Ui, Widget};
@@ -47,6 +48,7 @@ pub struct Router {
     ndb: NDBWrapper,
     login: Option<[u8; 32]>,
     client: Client,
+    image_cache: ImageCache,
 }
 
 impl Router {
@@ -59,6 +61,7 @@ impl Router {
             ndb: NDBWrapper::new(ctx.clone(), ndb.clone(), client.clone()),
             client,
             login: None,
+            image_cache: ImageCache::new(ctx.clone()),
         }
     }
 
@@ -103,19 +106,18 @@ impl Router {
             ndb: &self.ndb,
             tx: &tx,
             login: &self.login,
+            img_cache: &self.image_cache,
         };
 
         // display app
-        ScrollArea::vertical()
-            .show(ui, |ui| {
-                Header::new().render(ui, &svc);
-                if let Some(w) = self.current_widget.as_mut() {
-                    w.render(ui, &svc)
-                } else {
-                    ui.label("No widget")
-                }
-            })
-            .inner
+        ui.vertical(|ui| {
+            Header::new().render(ui, &svc);
+            if let Some(w) = self.current_widget.as_mut() {
+                w.render(ui, &svc)
+            } else {
+                ui.label("No widget")
+            }
+        }).response
     }
 }
 
@@ -126,6 +128,7 @@ pub struct RouteServices<'a> {
     pub ndb: &'a NDBWrapper,         //ref
     pub tx: &'a Transaction,         //ref
     pub login: &'a Option<[u8; 32]>, //ref
+    pub img_cache: &'a ImageCache,
 }
 
 impl<'a> RouteServices<'a> {

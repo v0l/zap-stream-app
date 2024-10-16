@@ -142,14 +142,7 @@ impl NDBWrapper {
             .get_profile_by_pubkey(tx, pubkey)
             .map_or(None, |p| p.record().profile());
 
-        let sub = if p.is_none() {
-            Some(self.subscribe(
-                "profile",
-                &[Filter::new().kinds([0]).authors([pubkey]).build()],
-            ))
-        } else {
-            None
-        };
+        let sub = None;
         (p, sub)
     }
 }

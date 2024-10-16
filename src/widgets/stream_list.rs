@@ -1,5 +1,5 @@
 use crate::route::RouteServices;
-use crate::widgets::stream::StreamEvent;
+use crate::widgets::stream_tile::StreamEvent;
 use egui::{Frame, Margin, Response, Ui, Widget};
 use nostrdb::Note;
 

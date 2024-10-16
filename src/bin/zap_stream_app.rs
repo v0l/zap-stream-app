@@ -1,14 +1,6 @@
-use crate::app::ZapStreamApp;
 use eframe::Renderer;
 use egui::Vec2;
-
-mod app;
-mod link;
-mod note_util;
-mod route;
-mod services;
-mod stream_info;
-pub mod widgets;
+use zap_stream_app::app::ZapStreamApp;
 
 #[tokio::main]
 async fn main() {
