@@ -1,0 +1,10 @@
+android:
+  manifest:
+    package: stream.zap.app
+    uses_permission:
+      - name: "android.permission.WRITE_EXTERNAL_STORAGE"
+      - name: "android.permission.READ_EXTERNAL_STORAGE"
+      - name: "android.permission.INTERNET"
+    uses_feature:
+      - name: "android.hardware.vulkan.level"
+        required: true

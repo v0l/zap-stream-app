@@ -1,9 +1,10 @@
 use crate::route::Router;
 use eframe::{App, CreationContext, Frame};
-use egui::{Color32, Context, Pos2, Rect, Rounding};
+use egui::{Color32, Context};
 use nostr_sdk::database::MemoryDatabase;
 use nostr_sdk::{Client, RelayPoolNotification};
 use nostrdb::{Config, Ndb};
+use std::path::PathBuf;
 use tokio::sync::broadcast;
 
 pub struct ZapStreamApp {
@@ -13,7 +14,7 @@ pub struct ZapStreamApp {
 }
 
 impl ZapStreamApp {
-    pub fn new(cc: &CreationContext) -> Self {
+    pub fn new(cc: &CreationContext, data_path: PathBuf) -> Self {
         let client = Client::builder()
             .database(MemoryDatabase::with_opts(Default::default()))
             .build();
@@ -34,12 +35,15 @@ impl ZapStreamApp {
         });
         egui_extras::install_image_loaders(&cc.egui_ctx);
 
-        let ndb = Ndb::new(".", &Config::default()).unwrap();
+        let ndb_path = data_path.join("ndb");
+        std::fs::create_dir_all(&ndb_path).expect("Failed to create ndb directory");
+
+        let ndb = Ndb::new(ndb_path.to_str().unwrap(), &Config::default()).unwrap();
 
         Self {
             client: client.clone(),
             notifications,
-            router: Router::new(cc.egui_ctx.clone(), client.clone(), ndb.clone()),
+            router: Router::new(data_path, cc.egui_ctx.clone(), client.clone(), ndb.clone()),
         }
     }
 }

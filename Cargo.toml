@@ -19,32 +19,17 @@ pretty_env_logger = "0.5.0"
 egui_inbox = "0.6.0"
 bech32 = "0.11.0"
 libc = "0.2.158"
-egui-video = { git = "https://github.com/v0l/egui-video.git", rev = "4766d939ce4d34b5a3a57b2fbe750ea10f389f39" }
 uuid = { version = "1.11.0", features = ["v4"] }
 chrono = "0.4.38"
 anyhow = "1.0.89"
 async-trait = "0.1.83"
 sha2 = "0.10.8"
-reqwest = { version = "0.12.7", default-features = false, features = [ "rustls-tls-native-roots" ] }
+reqwest = { version = "0.12.7", default-features = false, features = ["rustls-tls-native-roots"] }
 itertools = "0.13.0"
+
+egui-video = { git = "https://github.com/v0l/egui-video.git", rev = "7e9f8dbc2c7d69dd2f327b18f6dc3687d65129b4" }
 
 [target.'cfg(target_os = "android")'.dependencies]
 android_logger = "0.14.1"
-android-activity = { version = "0.6.0", features = [ "native-activity" ] }
-winit = { version = "0.30.5", features = [ "android-native-activity" ] }
-
-[package.metadata.android]
-package = "stream.zap.app"
-build_targets = [ "aarch64-linux-android" ]
-#build_targets = [ "armv7-linux-androideabi" ]
-large_heap = true
-
-[package.metadata.android.sdk]
-min_sdk_version = 20
-target_sdk_version = 32
-
-[package.metadata.android.application]
-extract_native_libs = true
-
-[package.metadata.android.application.activity]
-config_changes = "orientation"
+android-activity = { version = "0.6.0", features = ["native-activity"] }
+winit = { version = "0.30.5", features = ["android-native-activity"] }

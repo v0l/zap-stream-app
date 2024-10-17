@@ -14,6 +14,7 @@ use nostr_sdk::nips::nip01;
 use nostr_sdk::{Client, Kind, PublicKey};
 use nostrdb::{Filter, Ndb, Note, Transaction};
 use std::borrow::Borrow;
+use std::path::PathBuf;
 
 mod home;
 mod stream;
@@ -52,7 +53,7 @@ pub struct Router {
 }
 
 impl Router {
-    pub fn new(ctx: Context, client: Client, ndb: Ndb) -> Self {
+    pub fn new(data_path: PathBuf, ctx: Context, client: Client, ndb: Ndb) -> Self {
         Self {
             current: Routes::HomePage,
             current_widget: None,
@@ -61,7 +62,7 @@ impl Router {
             ndb: NDBWrapper::new(ctx.clone(), ndb.clone(), client.clone()),
             client,
             login: None,
-            image_cache: ImageCache::new(ctx.clone()),
+            image_cache: ImageCache::new(data_path, ctx.clone()),
         }
     }
 

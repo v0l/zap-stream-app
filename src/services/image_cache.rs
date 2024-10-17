@@ -17,8 +17,8 @@ pub struct ImageCache {
 }
 
 impl ImageCache {
-    pub fn new(ctx: egui::Context) -> Self {
-        let out = PathBuf::from("./cache/images");
+    pub fn new(data_path: PathBuf, ctx: egui::Context) -> Self {
+        let out = data_path.join("cache/images");
         fs::create_dir_all(&out).unwrap();
         Self {
             ctx,
