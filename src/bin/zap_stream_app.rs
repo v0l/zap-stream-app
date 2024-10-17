@@ -13,7 +13,7 @@ async fn main() {
     options.renderer = Renderer::Glow;
     options.viewport = options.viewport.with_inner_size(Vec2::new(360., 720.));
 
-    let data_path = PathBuf::from(".");
+    let data_path = PathBuf::from("./.data");
     let _res = eframe::run_native(
         "zap.stream",
         options,

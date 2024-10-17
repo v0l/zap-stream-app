@@ -1,5 +1,4 @@
 /target
-/ndb
+/.data
 /.idea
-/cache
 /ffmpeg-kit

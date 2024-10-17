@@ -79,7 +79,7 @@ impl Query {
         // remove filters already sent
         next = next
             .into_iter()
-            .filter(|f| !self.traces.iter().all(|y| y.filters.iter().any(|z| z.eq(f))))
+            .filter(|f| !self.traces.iter().any(|y| y.filters.iter().any(|z| z.eq(f))))
             .collect();
 
         if next.len() == 0 {

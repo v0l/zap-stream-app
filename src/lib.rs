@@ -25,7 +25,7 @@ pub async fn android_main(app: AndroidApp) {
 
     let mut options = eframe::NativeOptions::default();
     options.renderer = Renderer::Glow;
-    options.viewport = options.viewport.with_inner_size(Vec2::new(360., 720.));
+
     let app_clone_for_event_loop = app.clone();
     options.event_loop_builder = Some(Box::new(move |builder| {
         builder.with_android_app(app_clone_for_event_loop);

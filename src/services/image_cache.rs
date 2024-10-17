@@ -45,7 +45,7 @@ impl ImageCache {
     {
         let u = url.into();
         let path = self.find(&u);
-        if !path.exists() {
+        if !path.exists() && u.len() > 0 {
             let path = path.clone();
             let fl = self.fetch_lock.clone();
             let ctx = self.ctx.clone();
