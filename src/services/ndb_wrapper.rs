@@ -2,7 +2,7 @@ use crate::services::query::QueryManager;
 use egui::CursorIcon::Default;
 use log::{info, warn};
 use nostr_sdk::secp256k1::Context;
-use nostr_sdk::{Client, JsonUtil, Kind, RelayPoolNotification};
+use nostr_sdk::{nostr, Client, JsonUtil, Kind, PublicKey, RelayPoolNotification};
 use nostrdb::{
     Error, Filter, Ndb, NdbProfile, Note, NoteKey, ProfileRecord, QueryResult, Subscription,
     Transaction,
@@ -142,6 +142,14 @@ impl NDBWrapper {
             .get_profile_by_pubkey(tx, pubkey)
             .map_or(None, |p| p.record().profile());
 
+        // TODO: fix this shit
+        if p.is_none() {
+            self.query_manager.queue_query("profile", &[
+                nostr::Filter::new()
+                .kinds([Kind::Metadata])
+                .authors([PublicKey::from_slice(pubkey).unwrap()])
+            ])
+        }
         let sub = None;
         (p, sub)
     }

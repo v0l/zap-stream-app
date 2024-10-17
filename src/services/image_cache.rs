@@ -58,6 +58,10 @@ impl ImageCache {
                         if let Err(e) = tokio::fs::write(path, data.bytes().await.unwrap()).await {
                             error!("Failed to write file: {}", e);
                         }
+                        // forget cached url
+                        for t in ctx.loaders().texture.lock().iter() {
+                            t.forget(&u);
+                        }
                         ctx.request_repaint();
                     }
                 }

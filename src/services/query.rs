@@ -3,7 +3,7 @@ use chrono::Utc;
 use log::{error, info};
 use nostr_sdk::prelude::StreamExt;
 use nostr_sdk::Kind::Metadata;
-use nostr_sdk::{Client, Filter, SubscriptionId};
+use nostr_sdk::{Client, Filter, SubscribeAutoCloseOptions, SubscriptionId};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;
 use std::time::Duration;
@@ -74,6 +74,16 @@ impl Query {
                 .kinds([Metadata])
                 .authors(next.iter().flat_map(|f| f.authors.as_ref().unwrap().clone()))
             ]
+        }
+
+        // remove filters already sent
+        next = next
+            .into_iter()
+            .filter(|f| !self.traces.iter().all(|y| y.filters.iter().any(|z| z.eq(f))))
+            .collect();
+
+        if next.len() == 0 {
+            return None;
         }
         Some(QueryTrace {
             id,
@@ -168,7 +178,7 @@ where
 #[async_trait::async_trait]
 impl QueryClient for Client {
     async fn subscribe(&self, id: &str, filters: &[QueryFilter]) -> Result<(), Error> {
-        self.subscribe_with_id(SubscriptionId::new(id), filters.into(), None)
+        self.subscribe_with_id(SubscriptionId::new(id), filters.into(), Some(SubscribeAutoCloseOptions::default()))
             .await?;
         Ok(())
     }

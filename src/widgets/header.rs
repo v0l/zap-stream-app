@@ -25,7 +25,7 @@ impl NostrWidget for Header {
                     |ui| {
                         ui.style_mut().spacing.item_spacing.x = 16.;
                         if Image::from_bytes("logo.svg", logo_bytes)
-                            .max_height(22.62)
+                            .max_height(24.)
                             .sense(Sense::click())
                             .ui(ui)
                             .clicked()
@@ -33,7 +33,7 @@ impl NostrWidget for Header {
                             services.navigate(Routes::HomePage);
                         }
                         if let Some(pk) = services.login {
-                            ui.add(Avatar::pubkey(pk, services));
+                            //ui.add(Avatar::pubkey(pk, services));
                         }
                     },
                 )

@@ -1,12 +1,12 @@
 use crate::link::NostrLink;
 use crate::note_util::NoteUtil;
 use crate::route::{RouteServices, Routes};
+use crate::stream_info::StreamInfo;
 use crate::widgets::avatar::Avatar;
 use crate::widgets::VideoPlaceholder;
 use eframe::epaint::Vec2;
 use egui::{Color32, Image, Label, Response, RichText, Rounding, Sense, TextWrapMode, Ui, Widget};
-use nostrdb::{NdbStrVariant, Note};
-use crate::stream_info::StreamInfo;
+use nostrdb::{NdbProfile, Note};
 
 pub struct StreamEvent<'a> {
     event: &'a Note<'a>,
@@ -56,7 +56,7 @@ impl Widget for StreamEvent<'_> {
                 });
             }
             ui.horizontal(|ui| {
-                ui.add(Avatar::pubkey(&host, self.services).size(40.));
+                ui.add(Avatar::from_profile(None, self.services.img_cache).size(40.));
                 let title = RichText::new(self.event.title().unwrap_or("Untitled"))
                     .size(16.)
                     .color(Color32::WHITE);

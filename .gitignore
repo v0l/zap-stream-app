@@ -1,6 +1,5 @@
 /target
-/lock.mdb
-/data.mdb
+/ndb
 /.idea
 /cache
 /ffmpeg-kit

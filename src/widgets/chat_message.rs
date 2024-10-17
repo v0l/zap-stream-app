@@ -30,9 +30,6 @@ impl<'a> Widget for ChatMessage<'a> {
             let name = self
                 .profile.0
                 .map_or("Nostrich", |f| f.name().map_or("Nostrich", |f| f));
-            let img = self
-                .profile.0
-                .map_or(None, |f| f.picture().map(|f| self.services.img_cache.load(f)));
 
             let name_color = if is_host {
                 PRIMARY
@@ -49,7 +46,7 @@ impl<'a> Widget for ChatMessage<'a> {
             format.color = Color32::WHITE;
             job.append(self.ev.content(), 5.0, format.clone());
 
-            ui.add(Avatar::new_optional(img).size(24.));
+            ui.add(Avatar::from_profile(self.profile.0, self.services.img_cache).size(24.));
             ui.add(Label::new(job)
                 .wrap_mode(TextWrapMode::Wrap)
             );

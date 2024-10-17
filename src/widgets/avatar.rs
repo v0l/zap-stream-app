@@ -1,6 +1,7 @@
-use crate::route::RouteServices;
+use crate::services::image_cache::ImageCache;
 use crate::services::ndb_wrapper::SubWrapper;
 use egui::{Color32, Image, Pos2, Response, Rounding, Sense, Ui, Vec2, Widget};
+use nostrdb::NdbProfile;
 
 pub struct Avatar<'a> {
     image: Option<Image<'a>>,
@@ -25,13 +26,12 @@ impl<'a> Avatar<'a> {
         }
     }
 
-    pub fn pubkey(pk: &[u8; 32], svc: &RouteServices<'a>) -> Self {
-        let (img, sub) = svc.ndb.fetch_profile(svc.tx, pk);
+    pub fn from_profile(p: Option<NdbProfile<'a>>, svc: &'a ImageCache) -> Self {
+        let img = p
+            .map_or(None, |f| f.picture().map(|f| svc.load(f)));
         Self {
-            image: img
-                .map_or(None, |p| p.picture())
-                .map(|p| svc.img_cache.load(p)),
-            sub,
+            image: img,
+            sub: None,
             size: None,
         }
     }
