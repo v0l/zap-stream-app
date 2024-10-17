@@ -1,3 +1,4 @@
+use crate::route::RouteServices;
 use crate::services::image_cache::ImageCache;
 use crate::services::ndb_wrapper::SubWrapper;
 use egui::{Color32, Image, Pos2, Response, Rounding, Sense, Ui, Vec2, Widget};
@@ -32,6 +33,15 @@ impl<'a> Avatar<'a> {
         Self {
             image: img,
             sub: None,
+            size: None,
+        }
+    }
+
+    pub fn pubkey(pk: &[u8; 32], svc: &'a RouteServices<'a>) -> Self {
+        let (p, sub) = svc.ndb.fetch_profile(svc.tx, pk);
+        Self {
+            image: p.and_then(|p| p.picture().and_then(|p| Some(svc.img_cache.load(p)))),
+            sub,
             size: None,
         }
     }

@@ -37,6 +37,8 @@ impl Widget for StreamEvent<'_> {
             ui.style_mut().spacing.item_spacing = Vec2::new(12., 16.);
 
             let host = self.event.host();
+            let (host_profile, _sub) = self.services.ndb.fetch_profile(self.services.tx, host);
+
             let w = ui.available_width();
             let h = (w / 16.0) * 9.0;
             let img_size = Vec2::new(w, h);
@@ -56,7 +58,7 @@ impl Widget for StreamEvent<'_> {
                 });
             }
             ui.horizontal(|ui| {
-                ui.add(Avatar::from_profile(None, self.services.img_cache).size(40.));
+                ui.add(Avatar::from_profile(host_profile, self.services.img_cache).size(40.));
                 let title = RichText::new(self.event.title().unwrap_or("Untitled"))
                     .size(16.)
                     .color(Color32::WHITE);

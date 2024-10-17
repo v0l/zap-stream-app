@@ -27,8 +27,10 @@ impl<'a> Widget for ChatMessage<'a> {
             let mut job = LayoutJob::default();
 
             let is_host = self.stream.host().eq(self.ev.pubkey());
-            let name = self
-                .profile.0
+            let profile = self.services.ndb.get_profile_by_pubkey(self.services.tx, self.ev.pubkey())
+                .map_or(None, |p| p.record().profile());
+
+            let name = profile
                 .map_or("Nostrich", |f| f.name().map_or("Nostrich", |f| f));
 
             let name_color = if is_host {
@@ -46,7 +48,7 @@ impl<'a> Widget for ChatMessage<'a> {
             format.color = Color32::WHITE;
             job.append(self.ev.content(), 5.0, format.clone());
 
-            ui.add(Avatar::from_profile(self.profile.0, self.services.img_cache).size(24.));
+            ui.add(Avatar::from_profile(profile ,self.services.img_cache).size(24.));
             ui.add(Label::new(job)
                 .wrap_mode(TextWrapMode::Wrap)
             );

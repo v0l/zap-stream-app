@@ -1,28 +1,27 @@
 use crate::route::RouteServices;
+use crate::services::image_cache::ImageCache;
 use crate::services::ndb_wrapper::SubWrapper;
 use crate::widgets::Avatar;
-use egui::{Color32, Image, Label, Response, RichText, TextWrapMode, Ui, Widget};
+use egui::{Color32, Label, Response, RichText, TextWrapMode, Ui, Widget};
 use nostrdb::NdbProfile;
 
 pub struct Profile<'a> {
     size: f32,
     pubkey: &'a [u8; 32],
     profile: Option<NdbProfile<'a>>,
-    profile_image: Option<Image<'a>>,
     sub: Option<SubWrapper>,
+    img_cache: &'a ImageCache,
 }
 
 impl<'a> Profile<'a> {
     pub fn new(pubkey: &'a [u8; 32], services: &'a RouteServices<'a>) -> Self {
         let (p, sub) = services.ndb.fetch_profile(services.tx, pubkey);
 
-        let img = p
-            .map_or(None, |f| f.picture().map(|f| services.img_cache.load(f)));
         Self {
             pubkey,
             size: 40.,
             profile: p,
-            profile_image: img,
+            img_cache: services.img_cache,
             sub,
         }
     }
@@ -37,7 +36,7 @@ impl<'a> Widget for Profile<'a> {
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 8.;
 
-            ui.add(Avatar::new_optional(self.profile_image).size(self.size));
+            ui.add(Avatar::from_profile(self.profile, self.img_cache).size(self.size));
 
             let name = self
                 .profile
