@@ -2,6 +2,7 @@ use crate::link::NostrLink;
 use crate::note_util::OwnedNote;
 use crate::route;
 use crate::route::home::HomePage;
+use crate::route::login::LoginPage;
 use crate::route::stream::StreamPage;
 use crate::services::image_cache::ImageCache;
 use crate::services::ndb_wrapper::NDBWrapper;
@@ -18,11 +19,12 @@ use std::path::PathBuf;
 
 mod home;
 mod stream;
+mod login;
 
 #[derive(PartialEq)]
 pub enum Routes {
     HomePage,
-    Event {
+    EventPage {
         link: NostrLink,
         event: Option<OwnedNote>,
     },
@@ -30,6 +32,7 @@ pub enum Routes {
         link: NostrLink,
         profile: Option<OwnedNote>,
     },
+    LoginPage,
 
     // special kind for modifying route state
     Action(RouteAction),
@@ -37,7 +40,8 @@ pub enum Routes {
 
 #[derive(PartialEq)]
 pub enum RouteAction {
-    Login([u8; 32]),
+    /// Login with public key
+    LoginPubkey([u8; 32]),
 }
 
 pub struct Router {
@@ -72,8 +76,12 @@ impl Router {
                 let w = HomePage::new(&self.ndb, tx);
                 self.current_widget = Some(Box::new(w));
             }
-            Routes::Event { link, .. } => {
+            Routes::EventPage { link, .. } => {
                 let w = StreamPage::new_from_link(&self.ndb, tx, link.clone());
+                self.current_widget = Some(Box::new(w));
+            }
+            Routes::LoginPage => {
+                let w = LoginPage::new();
                 self.current_widget = Some(Box::new(w));
             }
             _ => warn!("Not implemented"),
@@ -85,10 +93,11 @@ impl Router {
         let tx = self.ndb.start_transaction();
 
         // handle app state changes
-        while let Some(r) = self.router.read(ui).next() {
+        let mut q = self.router.read(ui);
+        while let Some(r) = q.next() {
             if let Routes::Action(a) = &r {
                 match a {
-                    RouteAction::Login(k) => self.login = Some(k.clone()),
+                    RouteAction::LoginPubkey(k) => self.login = Some(k.clone()),
                     _ => info!("Not implemented"),
                 }
             } else {
@@ -135,6 +144,12 @@ pub struct RouteServices<'a> {
 impl<'a> RouteServices<'a> {
     pub fn navigate(&self, route: Routes) {
         if let Err(e) = self.router.send(route) {
+            warn!("Failed to navigate");
+        }
+    }
+
+    pub fn action(&self, route: RouteAction) {
+        if let Err(e) = self.router.send(Routes::Action(route)) {
             warn!("Failed to navigate");
         }
     }

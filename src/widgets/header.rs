@@ -1,9 +1,9 @@
 use crate::route::{RouteServices, Routes};
 use crate::widgets::avatar::Avatar;
-use crate::widgets::NostrWidget;
+use crate::widgets::{Button, NostrWidget};
 use eframe::emath::Align;
 use eframe::epaint::Vec2;
-use egui::{Frame, Image, Layout, Margin, Response, Sense, Ui, Widget};
+use egui::{CursorIcon, Frame, Image, Layout, Margin, Response, Sense, Ui, Widget};
 
 pub struct Header;
 
@@ -28,13 +28,24 @@ impl NostrWidget for Header {
                             .max_height(24.)
                             .sense(Sense::click())
                             .ui(ui)
+                            .on_hover_and_drag_cursor(CursorIcon::PointingHand)
                             .clicked()
                         {
                             services.navigate(Routes::HomePage);
                         }
-                        if let Some(pk) = services.login {
-                            //ui.add(Avatar::pubkey(pk, services));
-                        }
+
+                        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                            if let Some(pk) = services.login {
+                                ui.add(Avatar::pubkey(pk, services));
+                            } else {
+                                if Button::new()
+                                    .show(ui, |ui| {
+                                        ui.label("Login")
+                                    }).clicked() {
+                                    services.navigate(Routes::LoginPage);
+                                }
+                            }
+                        });
                     },
                 )
             })

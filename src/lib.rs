@@ -8,8 +8,10 @@ mod note_util;
 mod route;
 mod services;
 mod stream_info;
-pub mod widgets;
-pub mod theme;
+mod widgets;
+mod theme;
+mod note_store;
+
 
 #[cfg(target_os = "android")]
 use winit::platform::android::activity::AndroidApp;
@@ -31,7 +33,7 @@ pub async fn android_main(app: AndroidApp) {
         builder.with_android_app(app_clone_for_event_loop);
     }));
 
-    let external_data_path = app
+    let data_path = app
         .external_data_path()
         .expect("external data path")
         .to_path_buf();
@@ -39,6 +41,6 @@ pub async fn android_main(app: AndroidApp) {
     let _res = eframe::run_native(
         "zap.stream",
         options,
-        Box::new(move |cc| Ok(Box::new(ZapStreamApp::new(cc, external_data_path)))),
+        Box::new(move |cc| Ok(Box::new(ZapStreamApp::new(cc, data_path)))),
     );
 }

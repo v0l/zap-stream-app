@@ -1,3 +1,4 @@
+use crate::note_store::NoteStore;
 use crate::note_util::OwnedNote;
 use crate::route::RouteServices;
 use crate::services::ndb_wrapper::{NDBWrapper, SubWrapper};
@@ -39,6 +40,7 @@ impl NostrWidget for HomePage {
             .map_while(|f| f.map_or(None, |f| Some(f)))
             .collect();
 
+        let events = NoteStore::from_vec(events);
         ScrollArea::vertical()
             .show(ui, |ui| {
                 widgets::StreamList::new(&events, &services).ui(ui)

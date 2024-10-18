@@ -7,7 +7,8 @@ use nostrdb::{
     Error, Filter, Ndb, NdbProfile, Note, NoteKey, ProfileRecord, QueryResult, Subscription,
     Transaction,
 };
-use std::sync::{Arc, RwLock};
+use std::collections::HashSet;
+use std::sync::{Arc, Mutex, RwLock};
 use tokio::sync::mpsc::UnboundedSender;
 
 pub struct NDBWrapper {
@@ -15,6 +16,7 @@ pub struct NDBWrapper {
     ndb: Ndb,
     client: Client,
     query_manager: QueryManager<Client>,
+    profiles: Mutex<HashSet<[u8; 32]>>,
 }
 
 /// Automatic cleanup for subscriptions
@@ -70,6 +72,7 @@ impl NDBWrapper {
             ndb,
             client,
             query_manager: qm,
+            profiles: Mutex::new(HashSet::new()),
         }
     }
 
@@ -144,11 +147,13 @@ impl NDBWrapper {
 
         // TODO: fix this shit
         if p.is_none() {
-            self.query_manager.queue_query("profile", &[
-                nostr::Filter::new()
-                .kinds([Kind::Metadata])
-                .authors([PublicKey::from_slice(pubkey).unwrap()])
-            ])
+            if self.profiles.lock().unwrap().insert(*pubkey) {
+                self.query_manager.queue_query("profile", &[
+                    nostr::Filter::new()
+                        .kinds([Kind::Metadata])
+                        .authors([PublicKey::from_slice(pubkey).unwrap()])
+                ])
+            }
         }
         let sub = None;
         (p, sub)

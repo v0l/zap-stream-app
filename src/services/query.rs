@@ -64,6 +64,12 @@ impl Query {
         let now = Utc::now();
         let id = Uuid::new_v4();
 
+        // remove filters already sent
+        next = next
+            .into_iter()
+            .filter(|f| self.traces.len() == 0 || !self.traces.iter().all(|y| y.filters.iter().any(|z| z == f)))
+            .collect();
+
         // force profile queries into single filter
         if next.iter().all(|f| if let Some(k) = &f.kinds {
             k.len() == 1 && k.first().unwrap().as_u16() == 0
@@ -76,11 +82,6 @@ impl Query {
             ]
         }
 
-        // remove filters already sent
-        next = next
-            .into_iter()
-            .filter(|f| !self.traces.iter().any(|y| y.filters.iter().any(|z| z.eq(f))))
-            .collect();
 
         if next.len() == 0 {
             return None;

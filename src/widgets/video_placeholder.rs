@@ -1,4 +1,4 @@
-use egui::{Color32, Rect, Response, Rounding, Sense, Ui, Vec2, Widget};
+use egui::{Color32, Response, Rounding, Sense, Ui, Vec2, Widget};
 
 pub struct VideoPlaceholder;
 
@@ -10,7 +10,7 @@ impl Widget for VideoPlaceholder {
 
         let (response, painter) = ui.allocate_painter(img_size, Sense::click());
         painter.rect_filled(
-            Rect::EVERYTHING,
+            response.rect,
             Rounding::same(12.),
             Color32::from_rgb(200, 200, 200),
         );

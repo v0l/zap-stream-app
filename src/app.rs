@@ -60,6 +60,7 @@ impl App for ZapStreamApp {
         egui::CentralPanel::default()
             .frame(app_frame)
             .show(ctx, |ui| {
+                ui.visuals_mut().override_text_color = Some(Color32::WHITE);
                 self.router.show(ui);
             });
     }

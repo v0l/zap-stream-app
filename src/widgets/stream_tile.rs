@@ -1,32 +1,24 @@
 use crate::link::NostrLink;
-use crate::note_util::NoteUtil;
 use crate::route::{RouteServices, Routes};
 use crate::stream_info::StreamInfo;
+use crate::theme::{NEUTRAL_500, NEUTRAL_900, PRIMARY};
 use crate::widgets::avatar::Avatar;
-use crate::widgets::VideoPlaceholder;
-use eframe::epaint::Vec2;
-use egui::{Color32, Image, Label, Response, RichText, Rounding, Sense, TextWrapMode, Ui, Widget};
-use nostrdb::{NdbProfile, Note};
+use eframe::epaint::{Rounding, Vec2};
+use egui::epaint::RectShape;
+use egui::load::TexturePoll;
+use egui::{vec2, Color32, CursorIcon, FontId, Label, Pos2, Rect, Response, RichText, Sense, TextWrapMode, Ui, Widget};
+use image::Pixel;
+use nostrdb::Note;
 
 pub struct StreamEvent<'a> {
     event: &'a Note<'a>,
-    picture: Option<Image<'a>>,
     services: &'a RouteServices<'a>,
 }
 
 impl<'a> StreamEvent<'a> {
     pub fn new(event: &'a Note<'a>, services: &'a RouteServices) -> Self {
-        let image = event.get_tag_value("image");
-        let cover = match image {
-            Some(i) => match i.variant().str() {
-                Some(i) => Some(services.img_cache.load(i)),
-                None => None,
-            },
-            None => None,
-        };
         Self {
             event,
-            picture: cover,
             services,
         }
     }
@@ -41,24 +33,65 @@ impl Widget for StreamEvent<'_> {
 
             let w = ui.available_width();
             let h = (w / 16.0) * 9.0;
-            let img_size = Vec2::new(w, h);
+            let cover = self.event.image()
+                .map(|p| self.services.img_cache.load(p));
 
-            let img = match self.picture {
-                Some(picture) => picture
-                    .fit_to_exact_size(img_size)
-                    .rounding(Rounding::same(12.))
-                    .sense(Sense::click())
-                    .ui(ui),
-                None => VideoPlaceholder.ui(ui),
+            let (response, painter) = ui.allocate_painter(Vec2::new(w, h), Sense::click());
+
+            if let Some(cover) = cover.map(|c|
+                c.rounding(Rounding::same(12.))
+                    .load_for_size(painter.ctx(), Vec2::new(w, h))) {
+                match cover {
+                    Ok(TexturePoll::Ready { texture }) => {
+                        painter.add(RectShape {
+                            rect: response.rect,
+                            rounding: Rounding::same(12.),
+                            fill: Color32::WHITE,
+                            stroke: Default::default(),
+                            blur_width: 0.0,
+                            fill_texture_id: texture.id,
+                            uv: Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(1.0, 1.0)),
+                        });
+                    }
+                    _ => {
+                        painter.rect_filled(response.rect, 12., NEUTRAL_500);
+                    }
+                }
+            } else {
+                painter.rect_filled(response.rect, 12., NEUTRAL_500);
+            }
+
+            let overlay_label_pad = Vec2::new(5., 5.);
+            let live_label_text = self.event.status().unwrap_or("live").to_string().to_uppercase();
+            let live_label_color = if live_label_text == "LIVE" {
+                PRIMARY
+            } else {
+                NEUTRAL_900
             };
-            if img.clicked() {
-                self.services.navigate(Routes::Event {
+            let live_label = painter.layout_no_wrap(live_label_text, FontId::default(), Color32::WHITE);
+
+            let overlay_react = response.rect.shrink(8.0);
+            let live_label_pos = overlay_react.min + vec2(overlay_react.width() - live_label.rect.width() - (overlay_label_pad.x * 2.), 0.0);
+            let live_label_background = Rect::from_two_pos(live_label_pos, live_label_pos + live_label.size() + (overlay_label_pad * 2.));
+            painter.rect_filled(live_label_background, 8., live_label_color);
+            painter.galley(live_label_pos + overlay_label_pad, live_label, Color32::PLACEHOLDER);
+
+            if let Some(viewers) = self.event.viewers() {
+                let viewers_label = painter.layout_no_wrap(format!("{} viewers", viewers), FontId::default(), Color32::WHITE);
+                let rect_start = overlay_react.max - viewers_label.size() - (overlay_label_pad * 2.0);
+                let pos = Rect::from_two_pos(rect_start, overlay_react.max);
+                painter.rect_filled(pos, 8., NEUTRAL_900);
+                painter.galley(rect_start + overlay_label_pad, viewers_label, Color32::PLACEHOLDER);
+            }
+            let response = response.on_hover_and_drag_cursor(CursorIcon::PointingHand);
+            if response.clicked() {
+                self.services.navigate(Routes::EventPage {
                     link: NostrLink::from_note(&self.event),
                     event: None,
                 });
             }
             ui.horizontal(|ui| {
-                ui.add(Avatar::from_profile(host_profile, self.services.img_cache).size(40.));
+                ui.add(Avatar::from_profile(&host_profile, self.services.img_cache).size(40.));
                 let title = RichText::new(self.event.title().unwrap_or("Untitled"))
                     .size(16.)
                     .color(Color32::WHITE);

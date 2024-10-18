@@ -9,6 +9,8 @@ mod stream_player;
 mod video_placeholder;
 mod stream_title;
 mod write_chat;
+mod username;
+mod button;
 
 use crate::route::RouteServices;
 use egui::{Response, Ui};
@@ -26,3 +28,5 @@ pub use self::stream_player::StreamPlayer;
 pub use self::video_placeholder::VideoPlaceholder;
 pub use self::stream_title::StreamTitle;
 pub use self::write_chat::WriteChat;
+pub use self::username::Username;
+pub use self::button::Button;

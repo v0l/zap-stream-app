@@ -11,6 +11,12 @@ pub trait StreamInfo {
     fn stream(&self) -> Option<&str>;
 
     fn starts(&self) -> u64;
+
+    fn image(&self) -> Option<&str>;
+
+    fn status(&self) -> Option<&str>;
+
+    fn viewers(&self) -> Option<u32>;
 }
 
 impl<'a> StreamInfo for Note<'a> {
@@ -50,12 +56,38 @@ impl<'a> StreamInfo for Note<'a> {
         }
     }
 
+
     fn starts(&self) -> u64 {
         if let Some(s) = self.get_tag_value("starts") {
             s.variant().str()
                 .map_or(self.created_at(), |v| v.parse::<u64>().unwrap_or(self.created_at()))
         } else {
             self.created_at()
+        }
+    }
+
+    fn image(&self) -> Option<&str> {
+        if let Some(s) = self.get_tag_value("image") {
+            s.variant().str()
+        } else {
+            None
+        }
+    }
+
+    fn status(&self) -> Option<&str> {
+        if let Some(s) = self.get_tag_value("status") {
+            s.variant().str()
+        } else {
+            None
+        }
+    }
+
+    fn viewers(&self) -> Option<u32> {
+        if let Some(s) = self.get_tag_value("current_participants") {
+            s.variant().str()
+                .map_or(None, |v| Some(v.parse::<u32>().unwrap_or(0)))
+        } else {
+            None
         }
     }
 }

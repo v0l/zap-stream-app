@@ -25,6 +25,8 @@ impl<'a> Widget for ChatMessage<'a> {
     fn ui(self, ui: &mut Ui) -> Response {
         ui.horizontal_wrapped(|ui| {
             let mut job = LayoutJob::default();
+            // TODO: avoid this somehow
+            job.wrap.break_anywhere = true;
 
             let is_host = self.stream.host().eq(self.ev.pubkey());
             let profile = self.services.ndb.get_profile_by_pubkey(self.services.tx, self.ev.pubkey())
@@ -48,7 +50,7 @@ impl<'a> Widget for ChatMessage<'a> {
             format.color = Color32::WHITE;
             job.append(self.ev.content(), 5.0, format.clone());
 
-            ui.add(Avatar::from_profile(profile ,self.services.img_cache).size(24.));
+            ui.add(Avatar::from_profile(&profile ,self.services.img_cache).size(24.));
             ui.add(Label::new(job)
                 .wrap_mode(TextWrapMode::Wrap)
             );

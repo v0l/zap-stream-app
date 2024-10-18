@@ -74,10 +74,12 @@ impl NostrWidget for StreamPage {
             let h = ui.available_height();
             ui.allocate_ui(Vec2::new(w, h - chat_h), |ui| {
                 if let Some(c) = self.chat.as_mut() {
-                    c.render(ui, services)
+                    c.render(ui, services);
                 } else {
-                    ui.label("Loading..")
+                    ui.label("Loading..");
                 }
+                // consume rest of space
+                ui.add_space(ui.available_height());
             });
             ui.allocate_ui(Vec2::new(w, chat_h), |ui| {
                 self.new_msg.render(ui, services)

@@ -27,7 +27,7 @@ impl<'a> Avatar<'a> {
         }
     }
 
-    pub fn from_profile(p: Option<NdbProfile<'a>>, svc: &'a ImageCache) -> Self {
+    pub fn from_profile(p: &'a Option<NdbProfile<'a>>, svc: &'a ImageCache) -> Self {
         let img = p
             .map_or(None, |f| f.picture().map(|f| svc.load(f)));
         Self {

@@ -1,9 +1,10 @@
 use crate::route::RouteServices;
 use crate::services::image_cache::ImageCache;
 use crate::services::ndb_wrapper::SubWrapper;
-use crate::widgets::Avatar;
-use egui::{Color32, Label, Response, RichText, TextWrapMode, Ui, Widget};
+use crate::widgets::{Avatar, Username};
+use egui::{Response, Ui, Widget};
 use nostrdb::NdbProfile;
+use crate::theme::FONT_SIZE;
 
 pub struct Profile<'a> {
     size: f32,
@@ -36,13 +37,8 @@ impl<'a> Widget for Profile<'a> {
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 8.;
 
-            ui.add(Avatar::from_profile(self.profile, self.img_cache).size(self.size));
-
-            let name = self
-                .profile
-                .map_or("Nostrich", |f| f.name().map_or("Nostrich", |f| f));
-            let name = RichText::new(name).size(13.).color(Color32::WHITE);
-            ui.add(Label::new(name).wrap_mode(TextWrapMode::Truncate));
+            ui.add(Avatar::from_profile(&self.profile, self.img_cache).size(self.size));
+            ui.add(Username::new(&self.profile, FONT_SIZE))
         }).response
     }
 }
