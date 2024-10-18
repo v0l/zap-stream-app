@@ -1,6 +1,5 @@
 use crate::link::NostrLink;
 use nostrdb::Note;
-use std::borrow::Borrow;
 use std::collections::HashMap;
 
 pub struct NoteStore<'a> {

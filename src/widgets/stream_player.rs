@@ -27,7 +27,7 @@ impl Widget for &mut StreamPlayer {
         let h = w / 16. * 9.;
         let size = Vec2::new(w, h);
 
-        if let Some(mut p) = self.player.as_mut() {
+        if let Some(p) = self.player.as_mut() {
             p.ui(ui, size)
         } else {
             VideoPlaceholder.ui(ui)

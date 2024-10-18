@@ -40,7 +40,7 @@ impl<'a> Avatar<'a> {
     pub fn pubkey(pk: &[u8; 32], svc: &'a RouteServices<'a>) -> Self {
         let (p, sub) = svc.ndb.fetch_profile(svc.tx, pk);
         Self {
-            image: p.and_then(|p| p.picture().and_then(|p| Some(svc.img_cache.load(p)))),
+            image: p.and_then(|p| p.picture().map(|p| svc.img_cache.load(p))),
             sub,
             size: None,
         }

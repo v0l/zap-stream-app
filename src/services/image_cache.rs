@@ -1,11 +1,9 @@
 use egui::Image;
 use log::{error, info};
 use nostr_sdk::util::hex;
-use sha2::digest::Update;
 use sha2::{Digest, Sha256};
 use std::collections::HashSet;
 use std::fs;
-use std::hash::Hash;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -45,7 +43,7 @@ impl ImageCache {
     {
         let u = url.into();
         let path = self.find(&u);
-        if !path.exists() && u.len() > 0 {
+        if !path.exists() && !u.is_empty() {
             let path = path.clone();
             let fl = self.fetch_lock.clone();
             let ctx = self.ctx.clone();

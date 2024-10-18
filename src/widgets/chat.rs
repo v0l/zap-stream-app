@@ -50,8 +50,7 @@ impl NostrWidget for Chat {
             .map_while(|n| {
                 services
                     .ndb
-                    .get_note_by_key(services.tx, NoteKey::new(n.0))
-                    .map_or(None, |n| Some(n))
+                    .get_note_by_key(services.tx, NoteKey::new(n.0)).ok()
             })
             .collect();
 
@@ -70,7 +69,7 @@ impl NostrWidget for Chat {
                             for ev in events.iter().sorted_by(|a, b| {
                                 a.starts().cmp(&b.starts())
                             }) {
-                                ChatMessage::new(&stream, &ev, services).ui(ui);
+                                ChatMessage::new(&stream, ev, services).ui(ui);
                             }
                         })
                     }).response

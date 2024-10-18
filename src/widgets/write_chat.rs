@@ -1,7 +1,7 @@
 use crate::route::RouteServices;
 use crate::theme::NEUTRAL_900;
 use crate::widgets::NostrWidget;
-use egui::{Button, Frame, Image, Margin, Rect, Response, Rounding, Sense, Shadow, Stroke, TextEdit, Ui, Vec2, Widget};
+use egui::{Frame, Image, Margin, Response, Rounding, Sense, Stroke, TextEdit, Ui, Widget};
 use log::info;
 
 pub struct WriteChat {

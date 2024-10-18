@@ -26,8 +26,7 @@ impl StreamPage {
             link,
             sub,
             event: events
-                .first()
-                .map_or(None, |n| Some(OwnedNote(n.note_key.as_u64()))),
+                .first().map(|n| OwnedNote(n.note_key.as_u64())),
             chat: None,
             player: None,
             new_msg: WriteChat::new(),
@@ -45,8 +44,7 @@ impl NostrWidget for StreamPage {
         let event = if let Some(k) = &self.event {
             services
                 .ndb
-                .get_note_by_key(services.tx, NoteKey::new(k.0))
-                .map_or(None, |f| Some(f))
+                .get_note_by_key(services.tx, NoteKey::new(k.0)).ok()
         } else {
             None
         };
@@ -65,7 +63,7 @@ impl NostrWidget for StreamPage {
 
             if self.chat.is_none() {
                 let ok = OwnedNote(event.key().unwrap().as_u64());
-                let chat = Chat::new(self.link.clone(), ok, &services.ndb, services.tx);
+                let chat = Chat::new(self.link.clone(), ok, services.ndb, services.tx);
                 self.chat = Some(chat);
             }
 

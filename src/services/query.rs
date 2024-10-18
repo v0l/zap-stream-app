@@ -4,10 +4,10 @@ use log::{error, info};
 use nostr_sdk::prelude::StreamExt;
 use nostr_sdk::Kind::Metadata;
 use nostr_sdk::{Client, Filter, SubscribeAutoCloseOptions, SubscriptionId};
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
+use tokio::sync::mpsc::{unbounded_channel, UnboundedSender};
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use uuid::Uuid;
@@ -58,17 +58,14 @@ impl Query {
     /// Return next query batch
     pub fn next(&mut self) -> Option<QueryTrace> {
         let mut next: Vec<QueryFilter> = self.queue.drain().collect();
-        if next.len() == 0 {
+        if next.is_empty() {
             return None;
         }
         let now = Utc::now();
         let id = Uuid::new_v4();
 
         // remove filters already sent
-        next = next
-            .into_iter()
-            .filter(|f| self.traces.len() == 0 || !self.traces.iter().all(|y| y.filters.iter().any(|z| z == f)))
-            .collect();
+        next.retain(|f| self.traces.is_empty() || !self.traces.iter().all(|y| y.filters.iter().any(|z| z == f)));
 
         // force profile queries into single filter
         if next.iter().all(|f| if let Some(k) = &f.kinds {
@@ -83,7 +80,7 @@ impl Query {
         }
 
 
-        if next.len() == 0 {
+        if next.is_empty() {
             return None;
         }
         Some(QueryTrace {
@@ -157,10 +154,10 @@ where
 
     fn push_filters(qq: &mut HashMap<String, Query>, id: &str, filters: Vec<QueryFilter>) {
         if let Some(q) = qq.get_mut(id) {
-            q.add(filters.into());
+            q.add(filters);
         } else {
             let mut q = Query::new(id);
-            q.add(filters.into());
+            q.add(filters);
             qq.insert(id.to_string(), q);
         }
     }

@@ -32,7 +32,7 @@ impl<'a> NostrWidget for StreamTitle<'a> {
                     .size(32.)
                     .ui(ui);
 
-                if let Some(summary) = self.event.get_tag_value("summary").map_or(None, |r| r.variant().str()) {
+                if let Some(summary) = self.event.get_tag_value("summary").and_then(|r| r.variant().str()) {
                     let summary = RichText::new(summary)
                         .color(Color32::WHITE);
                     ui.add(Label::new(summary).wrap_mode(TextWrapMode::Truncate));

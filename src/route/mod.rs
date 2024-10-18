@@ -1,20 +1,16 @@
 use crate::link::NostrLink;
 use crate::note_util::OwnedNote;
-use crate::route;
 use crate::route::home::HomePage;
 use crate::route::login::LoginPage;
 use crate::route::stream::StreamPage;
 use crate::services::image_cache::ImageCache;
 use crate::services::ndb_wrapper::NDBWrapper;
-use crate::widgets::{Header, NostrWidget, StreamList};
-use egui::{Context, Response, ScrollArea, Ui, Widget};
+use crate::widgets::{Header, NostrWidget};
+use egui::{Context, Response, Ui};
 use egui_inbox::{UiInbox, UiInboxSender};
-use egui_video::{Player, PlayerState};
 use log::{info, warn};
-use nostr_sdk::nips::nip01;
-use nostr_sdk::{Client, Kind, PublicKey};
-use nostrdb::{Filter, Ndb, Note, Transaction};
-use std::borrow::Borrow;
+use nostr_sdk::Client;
+use nostrdb::{Ndb, Transaction};
 use std::path::PathBuf;
 
 mod home;
@@ -93,11 +89,11 @@ impl Router {
         let tx = self.ndb.start_transaction();
 
         // handle app state changes
-        let mut q = self.router.read(ui);
-        while let Some(r) = q.next() {
+        let q = self.router.read(ui);
+        for r in q {
             if let Routes::Action(a) = &r {
                 match a {
-                    RouteAction::LoginPubkey(k) => self.login = Some(k.clone()),
+                    RouteAction::LoginPubkey(k) => self.login = Some(*k),
                     _ => info!("Not implemented"),
                 }
             } else {

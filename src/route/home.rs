@@ -37,13 +37,13 @@ impl NostrWidget for HomePage {
             .events
             .iter()
             .map(|n| services.ndb.get_note_by_key(services.tx, NoteKey::new(n.0)))
-            .map_while(|f| f.map_or(None, |f| Some(f)))
+            .map_while(|f| f.ok())
             .collect();
 
         let events = NoteStore::from_vec(events);
         ScrollArea::vertical()
             .show(ui, |ui| {
-                widgets::StreamList::new(&events, &services).ui(ui)
+                widgets::StreamList::new(&events, services).ui(ui)
             }).inner
     }
 }

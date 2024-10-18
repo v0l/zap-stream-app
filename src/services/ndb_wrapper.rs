@@ -1,15 +1,12 @@
 use crate::services::query::QueryManager;
-use egui::CursorIcon::Default;
-use log::{info, warn};
-use nostr_sdk::secp256k1::Context;
+use log::warn;
 use nostr_sdk::{nostr, Client, JsonUtil, Kind, PublicKey, RelayPoolNotification};
 use nostrdb::{
     Error, Filter, Ndb, NdbProfile, Note, NoteKey, ProfileRecord, QueryResult, Subscription,
     Transaction,
 };
 use std::collections::HashSet;
-use std::sync::{Arc, Mutex, RwLock};
-use tokio::sync::mpsc::UnboundedSender;
+use std::sync::Mutex;
 
 pub struct NDBWrapper {
     ctx: egui::Context,
@@ -31,9 +28,9 @@ impl SubWrapper {
     }
 }
 
-impl Into<u64> for &SubWrapper {
-    fn into(self) -> u64 {
-        self.subscription.id()
+impl From<&SubWrapper> for u64 {
+    fn from(val: &SubWrapper) -> Self {
+        val.subscription.id()
     }
 }
 
@@ -146,14 +143,12 @@ impl NDBWrapper {
             .map_or(None, |p| p.record().profile());
 
         // TODO: fix this shit
-        if p.is_none() {
-            if self.profiles.lock().unwrap().insert(*pubkey) {
-                self.query_manager.queue_query("profile", &[
-                    nostr::Filter::new()
-                        .kinds([Kind::Metadata])
-                        .authors([PublicKey::from_slice(pubkey).unwrap()])
-                ])
-            }
+        if p.is_none() && self.profiles.lock().unwrap().insert(*pubkey) {
+            self.query_manager.queue_query("profile", &[
+                nostr::Filter::new()
+                    .kinds([Kind::Metadata])
+                    .authors([PublicKey::from_slice(pubkey).unwrap()])
+            ])
         }
         let sub = None;
         (p, sub)

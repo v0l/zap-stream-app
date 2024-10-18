@@ -71,15 +71,15 @@ impl NostrLink {
                         .to_string(),
                 ),
                 kind: Some(note.kind()),
-                author: Some(note.pubkey().clone()),
+                author: Some(*note.pubkey()),
                 relays: vec![],
             }
         } else {
             Self {
                 hrp: NostrLinkType::Event,
-                id: IdOrStr::Id(note.id().clone()),
+                id: IdOrStr::Id(*note.id()),
                 kind: Some(note.kind()),
-                author: Some(note.pubkey().clone()),
+                author: Some(*note.pubkey()),
                 relays: vec![],
             }
         }

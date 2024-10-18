@@ -1,6 +1,5 @@
 use nostr_sdk::util::hex;
 use nostrdb::{NdbStr, Note, Tag};
-use std::fmt::Display;
 
 pub trait NoteUtil {
     fn id_hex(&self) -> String;

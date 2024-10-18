@@ -84,8 +84,7 @@ impl<'a> StreamInfo for Note<'a> {
 
     fn viewers(&self) -> Option<u32> {
         if let Some(s) = self.get_tag_value("current_participants") {
-            s.variant().str()
-                .map_or(None, |v| Some(v.parse::<u32>().unwrap_or(0)))
+            s.variant().str().map(|v| v.parse::<u32>().unwrap_or(0))
         } else {
             None
         }

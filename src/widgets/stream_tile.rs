@@ -86,7 +86,7 @@ impl Widget for StreamEvent<'_> {
             let response = response.on_hover_and_drag_cursor(CursorIcon::PointingHand);
             if response.clicked() {
                 self.services.navigate(Routes::EventPage {
-                    link: NostrLink::from_note(&self.event),
+                    link: NostrLink::from_note(self.event),
                     event: None,
                 });
             }
