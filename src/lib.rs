@@ -9,6 +9,8 @@ mod widgets;
 mod theme;
 mod note_store;
 
+use eframe::Renderer;
+use crate::app::ZapStreamApp;
 
 #[cfg(target_os = "android")]
 use winit::platform::android::activity::AndroidApp;
