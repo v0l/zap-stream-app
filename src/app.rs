@@ -33,7 +33,6 @@ impl ZapStreamApp {
                 .expect("Failed to add relay");
             client_clone.connect().await;
         });
-        egui_extras::install_image_loaders(&cc.egui_ctx);
 
         let ndb_path = data_path.join("ndb");
         std::fs::create_dir_all(&ndb_path).expect("Failed to create ndb directory");

@@ -1,10 +1,10 @@
 use crate::route::RouteServices;
 use crate::services::image_cache::ImageCache;
 use crate::services::ndb_wrapper::SubWrapper;
+use crate::theme::FONT_SIZE;
 use crate::widgets::{Avatar, Username};
 use egui::{Response, Ui, Widget};
 use nostrdb::NdbProfile;
-use crate::theme::FONT_SIZE;
 
 pub struct Profile<'a> {
     size: f32,
@@ -39,6 +39,7 @@ impl<'a> Widget for Profile<'a> {
 
             ui.add(Avatar::from_profile(&self.profile, self.img_cache).size(self.size));
             ui.add(Username::new(&self.profile, FONT_SIZE))
-        }).response
+        })
+        .response
     }
 }

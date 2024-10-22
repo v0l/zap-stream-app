@@ -11,9 +11,7 @@ pub struct StreamTitle<'a> {
 
 impl<'a> StreamTitle<'a> {
     pub fn new(event: &'a Note<'a>) -> StreamTitle {
-        StreamTitle {
-            event
-        }
+        StreamTitle { event }
     }
 }
 
@@ -28,15 +26,17 @@ impl<'a> NostrWidget for StreamTitle<'a> {
                     .color(Color32::WHITE);
                 ui.add(Label::new(title.strong()).wrap_mode(TextWrapMode::Truncate));
 
-                Profile::new(self.event.host(), services)
-                    .size(32.)
-                    .ui(ui);
+                Profile::new(self.event.host(), services).size(32.).ui(ui);
 
-                if let Some(summary) = self.event.get_tag_value("summary").and_then(|r| r.variant().str()) {
-                    let summary = RichText::new(summary)
-                        .color(Color32::WHITE);
+                if let Some(summary) = self
+                    .event
+                    .get_tag_value("summary")
+                    .and_then(|r| r.variant().str())
+                {
+                    let summary = RichText::new(summary).color(Color32::WHITE);
                     ui.add(Label::new(summary).wrap_mode(TextWrapMode::Truncate));
                 }
-            }).response
+            })
+            .response
     }
 }

@@ -10,9 +10,7 @@ pub struct WriteChat {
 
 impl WriteChat {
     pub fn new() -> Self {
-        Self {
-            msg: String::new(),
-        }
+        Self { msg: String::new() }
     }
 }
 
@@ -30,18 +28,19 @@ impl NostrWidget for WriteChat {
                     .inner_margin(Margin::symmetric(12., 12.))
                     .show(ui, |ui| {
                         ui.horizontal(|ui| {
-                            let editor = TextEdit::singleline(&mut self.msg)
-                                .frame(false);
+                            let editor = TextEdit::singleline(&mut self.msg).frame(false);
                             ui.add(editor);
                             if Image::from_bytes("send-03.svg", logo_bytes)
                                 .sense(Sense::click())
                                 .ui(ui)
-                                .clicked() {
+                                .clicked()
+                            {
                                 info!("Sending: {}", self.msg);
                                 self.msg.clear();
                             }
                         });
                     })
-            }).response
+            })
+            .response
     }
 }

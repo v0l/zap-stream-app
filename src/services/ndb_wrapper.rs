@@ -144,11 +144,12 @@ impl NDBWrapper {
 
         // TODO: fix this shit
         if p.is_none() && self.profiles.lock().unwrap().insert(*pubkey) {
-            self.query_manager.queue_query("profile", &[
-                nostr::Filter::new()
+            self.query_manager.queue_query(
+                "profile",
+                &[nostr::Filter::new()
                     .kinds([Kind::Metadata])
-                    .authors([PublicKey::from_slice(pubkey).unwrap()])
-            ])
+                    .authors([PublicKey::from_slice(pubkey).unwrap()])],
+            )
         }
         let sub = None;
         (p, sub)

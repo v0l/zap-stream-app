@@ -37,10 +37,7 @@ impl NostrWidget for Header {
                         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                             if let Some(pk) = services.login {
                                 ui.add(Avatar::pubkey(pk, services));
-                            } else if Button::new()
-                                .show(ui, |ui| {
-                                    ui.label("Login")
-                                }).clicked() {
+                            } else if Button::new().show(ui, |ui| ui.label("Login")).clicked() {
                                 services.navigate(Routes::LoginPage);
                             }
                         });

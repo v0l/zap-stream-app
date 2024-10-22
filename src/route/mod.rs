@@ -14,8 +14,8 @@ use nostrdb::{Ndb, Transaction};
 use std::path::PathBuf;
 
 mod home;
-mod stream;
 mod login;
+mod stream;
 
 #[derive(PartialEq)]
 pub enum Routes {
@@ -123,7 +123,8 @@ impl Router {
             } else {
                 ui.label("No widget")
             }
-        }).response
+        })
+        .response
     }
 }
 

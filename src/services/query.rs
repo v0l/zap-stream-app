@@ -65,20 +65,23 @@ impl Query {
         let id = Uuid::new_v4();
 
         // remove filters already sent
-        next.retain(|f| self.traces.is_empty() || !self.traces.iter().all(|y| y.filters.iter().any(|z| z == f)));
+        next.retain(|f| {
+            self.traces.is_empty() || !self.traces.iter().all(|y| y.filters.iter().any(|z| z == f))
+        });
 
         // force profile queries into single filter
-        if next.iter().all(|f| if let Some(k) = &f.kinds {
-            k.len() == 1 && k.first().unwrap().as_u16() == 0
-        } else {
-            false
+        if next.iter().all(|f| {
+            if let Some(k) = &f.kinds {
+                k.len() == 1 && k.first().unwrap().as_u16() == 0
+            } else {
+                false
+            }
         }) {
-            next = vec![Filter::new()
-                .kinds([Metadata])
-                .authors(next.iter().flat_map(|f| f.authors.as_ref().unwrap().clone()))
-            ]
+            next = vec![Filter::new().kinds([Metadata]).authors(
+                next.iter()
+                    .flat_map(|f| f.authors.as_ref().unwrap().clone()),
+            )]
         }
-
 
         if next.is_empty() {
             return None;
@@ -166,18 +169,24 @@ where
     where
         F: Into<Vec<QueryFilter>>,
     {
-        self.queue_into_queries.send(QueueDefer {
-            id: id.to_string(),
-            filters: filters.into(),
-        }).unwrap()
+        self.queue_into_queries
+            .send(QueueDefer {
+                id: id.to_string(),
+                filters: filters.into(),
+            })
+            .unwrap()
     }
 }
 
 #[async_trait::async_trait]
 impl QueryClient for Client {
     async fn subscribe(&self, id: &str, filters: &[QueryFilter]) -> Result<(), Error> {
-        self.subscribe_with_id(SubscriptionId::new(id), filters.into(), Some(SubscribeAutoCloseOptions::default()))
-            .await?;
+        self.subscribe_with_id(
+            SubscriptionId::new(id),
+            filters.into(),
+            Some(SubscribeAutoCloseOptions::default()),
+        )
+        .await?;
         Ok(())
     }
 }

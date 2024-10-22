@@ -9,7 +9,7 @@ pub struct NoteStore<'a> {
 impl<'a> NoteStore<'a> {
     pub fn new() -> Self {
         Self {
-            events: HashMap::new()
+            events: HashMap::new(),
         }
     }
 
@@ -36,12 +36,10 @@ impl<'a> NoteStore<'a> {
     }
 
     pub fn key(note: &Note<'a>) -> String {
-        NostrLink::from_note(note)
-            .to_tag_value()
+        NostrLink::from_note(note).to_tag_value()
     }
 
-    pub fn iter(&self) -> impl Iterator<Item=&Note<'a>> {
+    pub fn iter(&self) -> impl Iterator<Item = &Note<'a>> {
         self.events.values()
     }
 }
-

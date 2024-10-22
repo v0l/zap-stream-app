@@ -23,11 +23,11 @@ impl Widget for StreamList<'_> {
             .show(ui, |ui| {
                 ui.vertical(|ui| {
                     ui.style_mut().spacing.item_spacing = egui::vec2(0., 20.0);
-                    for event in self.streams.iter()
-                        .sorted_by(|a, b| {
-                            a.status().cmp(&b.status())
-                                .then(a.starts().cmp(&b.starts()).reverse())
-                        }) {
+                    for event in self.streams.iter().sorted_by(|a, b| {
+                        a.status()
+                            .cmp(&b.status())
+                            .then(a.starts().cmp(&b.starts()).reverse())
+                    }) {
                         ui.add(StreamEvent::new(event, self.services));
                     }
                 })

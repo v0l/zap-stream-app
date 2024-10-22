@@ -7,9 +7,7 @@ pub struct Button {
 
 impl Button {
     pub fn new() -> Self {
-        Self {
-            color: NEUTRAL_800
-        }
+        Self { color: NEUTRAL_800 }
     }
 
     pub fn show<F>(self, ui: &mut Ui, add_contents: F) -> Response
@@ -24,7 +22,9 @@ impl Button {
 
         let id = r.response.id;
         ui.interact(
-            r.response.on_hover_and_drag_cursor(CursorIcon::PointingHand).rect,
+            r.response
+                .on_hover_and_drag_cursor(CursorIcon::PointingHand)
+                .rect,
             id,
             Sense::click(),
         )

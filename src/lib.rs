@@ -1,16 +1,15 @@
-
 pub mod app;
 mod link;
+mod note_store;
 mod note_util;
 mod route;
 mod services;
 mod stream_info;
-mod widgets;
 mod theme;
-mod note_store;
+mod widgets;
 
-use eframe::Renderer;
 use crate::app::ZapStreamApp;
+use eframe::Renderer;
 
 #[cfg(target_os = "android")]
 use winit::platform::android::activity::AndroidApp;
@@ -22,7 +21,9 @@ use winit::platform::android::EventLoopBuilderExtAndroid;
 #[tokio::main]
 pub async fn android_main(app: AndroidApp) {
     std::env::set_var("RUST_BACKTRACE", "full");
-    android_logger::init_once(android_logger::Config::default().with_max_level(log::LevelFilter::Info));
+    android_logger::init_once(
+        android_logger::Config::default().with_max_level(log::LevelFilter::Info),
+    );
 
     let mut options = eframe::NativeOptions::default();
     options.renderer = Renderer::Glow;

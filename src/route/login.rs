@@ -25,10 +25,7 @@ impl NostrWidget for LoginPage {
             ui.label(RichText::new("Login").size(32.));
             ui.label("Pubkey");
             ui.text_edit_singleline(&mut self.key);
-            if Button::new()
-                .show(ui, |ui| {
-                    ui.label("Login")
-                }).clicked() {
+            if Button::new().show(ui, |ui| ui.label("Login")).clicked() {
                 if let Ok(pk) = hex::decode(&self.key) {
                     if let Ok(pk) = pk.as_slice().try_into() {
                         services.action(RouteAction::LoginPubkey(pk));
@@ -41,6 +38,7 @@ impl NostrWidget for LoginPage {
             if let Some(e) = &self.error {
                 ui.label(RichText::new(e).color(Color32::RED));
             }
-        }).response
+        })
+        .response
     }
 }

@@ -25,8 +25,7 @@ impl StreamPage {
         Self {
             link,
             sub,
-            event: events
-                .first().map(|n| OwnedNote(n.note_key.as_u64())),
+            event: events.first().map(|n| OwnedNote(n.note_key.as_u64())),
             chat: None,
             player: None,
             new_msg: WriteChat::new(),
@@ -44,7 +43,8 @@ impl NostrWidget for StreamPage {
         let event = if let Some(k) = &self.event {
             services
                 .ndb
-                .get_note_by_key(services.tx, NoteKey::new(k.0)).ok()
+                .get_note_by_key(services.tx, NoteKey::new(k.0))
+                .ok()
         } else {
             None
         };
@@ -79,9 +79,8 @@ impl NostrWidget for StreamPage {
                 // consume rest of space
                 ui.add_space(ui.available_height());
             });
-            ui.allocate_ui(Vec2::new(w, chat_h), |ui| {
-                self.new_msg.render(ui, services)
-            }).response
+            ui.allocate_ui(Vec2::new(w, chat_h), |ui| self.new_msg.render(ui, services))
+                .response
         } else {
             ui.label("Loading..")
         }

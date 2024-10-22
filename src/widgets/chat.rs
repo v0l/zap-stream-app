@@ -50,11 +50,13 @@ impl NostrWidget for Chat {
             .map_while(|n| {
                 services
                     .ndb
-                    .get_note_by_key(services.tx, NoteKey::new(n.0)).ok()
+                    .get_note_by_key(services.tx, NoteKey::new(n.0))
+                    .ok()
             })
             .collect();
 
-        let stream = services.ndb
+        let stream = services
+            .ndb
             .get_note_by_key(services.tx, NoteKey::new(self.stream.0))
             .unwrap();
 
@@ -66,13 +68,17 @@ impl NostrWidget for Chat {
                     .show(ui, |ui| {
                         ui.vertical(|ui| {
                             ui.spacing_mut().item_spacing.y = 8.0;
-                            for ev in events.iter().sorted_by(|a, b| {
-                                a.created_at().cmp(&b.created_at())
-                            }).tail(20) {
+                            for ev in events
+                                .iter()
+                                .sorted_by(|a, b| a.created_at().cmp(&b.created_at()))
+                                .tail(20)
+                            {
                                 ChatMessage::new(&stream, ev, services).ui(ui);
                             }
                         })
-                    }).response
-            }).inner
+                    })
+                    .response
+            })
+            .inner
     }
 }

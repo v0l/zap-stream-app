@@ -74,11 +74,11 @@ impl<'a> StreamInfo for Note<'a> {
         }
     }
 
-
     fn starts(&self) -> u64 {
         if let Some(s) = self.get_tag_value("starts") {
-            s.variant().str()
-                .map_or(self.created_at(), |v| v.parse::<u64>().unwrap_or(self.created_at()))
+            s.variant().str().map_or(self.created_at(), |v| {
+                v.parse::<u64>().unwrap_or(self.created_at())
+            })
         } else {
             self.created_at()
         }

@@ -42,8 +42,7 @@ impl NostrWidget for HomePage {
 
         let events = NoteStore::from_vec(events);
         ScrollArea::vertical()
-            .show(ui, |ui| {
-                widgets::StreamList::new(&events, services).ui(ui)
-            }).inner
+            .show(ui, |ui| widgets::StreamList::new(&events, services).ui(ui))
+            .inner
     }
 }

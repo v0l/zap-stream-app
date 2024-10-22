@@ -28,8 +28,7 @@ impl<'a> Avatar<'a> {
     }
 
     pub fn from_profile(p: &'a Option<NdbProfile<'a>>, svc: &'a ImageCache) -> Self {
-        let img = p
-            .map_or(None, |f| f.picture().map(|f| svc.load(f)));
+        let img = p.map_or(None, |f| f.picture().map(|f| svc.load(f)));
         Self {
             image: img,
             sub: None,
@@ -57,10 +56,17 @@ impl<'a> Widget for Avatar<'a> {
         let size_v = self.size.unwrap_or(40.);
         let size = Vec2::new(size_v, size_v);
         match self.image {
-            Some(img) => img.fit_to_exact_size(size).rounding(Rounding::same(size_v)).ui(ui),
+            Some(img) => img
+                .fit_to_exact_size(size)
+                .rounding(Rounding::same(size_v))
+                .ui(ui),
             None => {
                 let (response, painter) = ui.allocate_painter(size, Sense::click());
-                painter.circle_filled(Pos2::new(size_v / 2., size_v / 2.), size_v / 2., Color32::from_rgb(200, 200, 200));
+                painter.circle_filled(
+                    Pos2::new(size_v / 2., size_v / 2.),
+                    size_v / 2.,
+                    Color32::from_rgb(200, 200, 200),
+                );
                 response
             }
         }

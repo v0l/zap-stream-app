@@ -16,8 +16,17 @@ pub struct ChatMessage<'a> {
 }
 
 impl<'a> ChatMessage<'a> {
-    pub fn new(stream: &'a Note<'a>, ev: &'a Note<'a>, services: &'a RouteServices<'a>) -> ChatMessage<'a> {
-        ChatMessage { stream, ev, services, profile: services.ndb.fetch_profile(services.tx, ev.pubkey()) }
+    pub fn new(
+        stream: &'a Note<'a>,
+        ev: &'a Note<'a>,
+        services: &'a RouteServices<'a>,
+    ) -> ChatMessage<'a> {
+        ChatMessage {
+            stream,
+            ev,
+            services,
+            profile: services.ndb.fetch_profile(services.tx, ev.pubkey()),
+        }
     }
 }
 
@@ -29,17 +38,15 @@ impl<'a> Widget for ChatMessage<'a> {
             job.wrap.break_anywhere = true;
 
             let is_host = self.stream.host().eq(self.ev.pubkey());
-            let profile = self.services.ndb.get_profile_by_pubkey(self.services.tx, self.ev.pubkey())
+            let profile = self
+                .services
+                .ndb
+                .get_profile_by_pubkey(self.services.tx, self.ev.pubkey())
                 .map_or(None, |p| p.record().profile());
 
-            let name = profile
-                .map_or("Nostrich", |f| f.name().map_or("Nostrich", |f| f));
+            let name = profile.map_or("Nostrich", |f| f.name().map_or("Nostrich", |f| f));
 
-            let name_color = if is_host {
-                PRIMARY
-            } else {
-                NEUTRAL_500
-            };
+            let name_color = if is_host { PRIMARY } else { NEUTRAL_500 };
 
             let mut format = TextFormat::default();
             format.line_height = Some(24.0);
@@ -50,10 +57,9 @@ impl<'a> Widget for ChatMessage<'a> {
             format.color = Color32::WHITE;
             job.append(self.ev.content(), 5.0, format.clone());
 
-            ui.add(Avatar::from_profile(&profile ,self.services.img_cache).size(24.));
-            ui.add(Label::new(job)
-                .wrap_mode(TextWrapMode::Wrap)
-            );
-        }).response
+            ui.add(Avatar::from_profile(&profile, self.services.img_cache).size(24.));
+            ui.add(Label::new(job).wrap_mode(TextWrapMode::Wrap));
+        })
+        .response
     }
 }
