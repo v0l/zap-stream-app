@@ -59,7 +59,7 @@ impl NostrLink {
     }
 
     pub fn from_note(note: &Note<'_>) -> Self {
-        if note.kind() >= 30_000 && note.kind() < 40_000 {
+        if note.kind() >= 30_000 && note.kind() < 40_000 && note.get_tag_value("d").and_then(|v| v.variant().str()).is_some() {
             Self {
                 hrp: NostrLinkType::Coordinate,
                 id: IdOrStr::Str(

@@ -1,6 +1,6 @@
 use crate::link::NostrLink;
 use crate::route::{RouteServices, Routes};
-use crate::stream_info::StreamInfo;
+use crate::stream_info::{StreamInfo, StreamStatus};
 use crate::theme::{NEUTRAL_500, NEUTRAL_900, PRIMARY};
 use crate::widgets::avatar::Avatar;
 use eframe::epaint::{Rounding, Vec2};
@@ -62,8 +62,8 @@ impl Widget for StreamEvent<'_> {
             }
 
             let overlay_label_pad = Vec2::new(5., 5.);
-            let live_label_text = self.event.status().unwrap_or("live").to_string().to_uppercase();
-            let live_label_color = if live_label_text == "LIVE" {
+            let live_label_text = self.event.status().to_string().to_uppercase();
+            let live_label_color = if self.event.status() == StreamStatus::Live {
                 PRIMARY
             } else {
                 NEUTRAL_900

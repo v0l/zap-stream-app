@@ -1,5 +1,23 @@
 use crate::note_util::NoteUtil;
 use nostrdb::{NdbStrVariant, Note};
+use std::fmt::{Display, Formatter};
+
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Clone)]
+pub enum StreamStatus {
+    Live,
+    Ended,
+    Planned,
+}
+
+impl Display for StreamStatus {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            StreamStatus::Live => write!(f, "Live"),
+            StreamStatus::Ended => write!(f, "Ended"),
+            StreamStatus::Planned => write!(f, "Planned"),
+        }
+    }
+}
 
 pub trait StreamInfo {
     fn title(&self) -> Option<&str>;
@@ -14,7 +32,7 @@ pub trait StreamInfo {
 
     fn image(&self) -> Option<&str>;
 
-    fn status(&self) -> Option<&str>;
+    fn status(&self) -> StreamStatus;
 
     fn viewers(&self) -> Option<u32>;
 }
@@ -74,11 +92,15 @@ impl<'a> StreamInfo for Note<'a> {
         }
     }
 
-    fn status(&self) -> Option<&str> {
+    fn status(&self) -> StreamStatus {
         if let Some(s) = self.get_tag_value("status") {
-            s.variant().str()
+            match s.variant().str() {
+                Some("live") => StreamStatus::Live,
+                Some("planned") => StreamStatus::Planned,
+                _ => StreamStatus::Ended,
+            }
         } else {
-            None
+            StreamStatus::Ended
         }
     }
 

@@ -1,22 +1,18 @@
 use crate::widgets::VideoPlaceholder;
 use egui::{Context, Response, Ui, Vec2, Widget};
-use egui_video::{AudioDevice, Player};
+use egui_video::{Player, PlayerControls};
 
 pub struct StreamPlayer {
     player: Option<Player>,
-    audio: AudioDevice,
 }
 
 impl StreamPlayer {
     pub fn new(ctx: &Context, url: &String) -> Self {
-        let mut audio = AudioDevice::new().unwrap();
+        let mut p = Player::new(ctx, url);
+        p.set_debug(true);
+        p.start();
         Self {
-            player: Player::new(ctx, url).map_or(None, |mut f| {
-                f.add_audio(&mut audio).expect("Failed to add audio");
-                f.start();
-                Some(f)
-            }),
-            audio,
+            player: Some(p)
         }
     }
 }
@@ -28,7 +24,7 @@ impl Widget for &mut StreamPlayer {
         let size = Vec2::new(w, h);
 
         if let Some(p) = self.player.as_mut() {
-            p.ui(ui, size)
+            ui.add_sized(size, p)
         } else {
             VideoPlaceholder.ui(ui)
         }

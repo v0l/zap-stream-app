@@ -27,7 +27,8 @@ sha2 = "0.10.8"
 reqwest = { version = "0.12.7", default-features = false, features = ["rustls-tls-native-roots"] }
 itertools = "0.13.0"
 
-egui-video = { git = "https://github.com/v0l/egui-video.git", rev = "7e9f8dbc2c7d69dd2f327b18f6dc3687d65129b4" }
+egui-video = { git = "https://github.com/v0l/egui-video.git", rev = "396d0041b437d2354f7a5d4e61c8ce33a69eb3b2" }
+#egui-video = { path = "../egui-video" }
 
 [target.'cfg(target_os = "android")'.dependencies]
 android_logger = "0.14.1"

@@ -1159,7 +1159,7 @@ dependencies = [
 [[package]]
 name = "egui-video"
 version = "0.8.0"
-source = "git+https://github.com/v0l/egui-video.git?rev=7e9f8dbc2c7d69dd2f327b18f6dc3687d65129b4#7e9f8dbc2c7d69dd2f327b18f6dc3687d65129b4"
+source = "git+https://github.com/v0l/egui-video.git?rev=396d0041b437d2354f7a5d4e61c8ce33a69eb3b2#396d0041b437d2354f7a5d4e61c8ce33a69eb3b2"
 dependencies = [
  "anyhow",
  "atomic",
@@ -1167,14 +1167,12 @@ dependencies = [
  "chrono",
  "cpal",
  "egui",
+ "egui_inbox",
  "ffmpeg-sys-the-third",
- "ffmpeg-the-third",
- "itertools 0.13.0",
  "libc",
+ "log",
  "nom",
- "parking_lot",
  "ringbuf",
- "timer",
 ]
 
 [[package]]
@@ -1410,16 +1408,6 @@ dependencies = [
  "libc",
  "pkg-config",
  "vcpkg",
-]
-
-[[package]]
-name = "ffmpeg-the-third"
-version = "2.0.1+ffmpeg-7.0"
-source = "git+https://github.com/shssoichiro/ffmpeg-the-third.git?branch=master#fd44dd339be4971c0e32787b42514883ca934997"
-dependencies = [
- "bitflags 2.6.0",
- "ffmpeg-sys-the-third",
- "libc",
 ]
 
 [[package]]
@@ -4214,15 +4202,6 @@ dependencies = [
  "flate2",
  "jpeg-decoder",
  "weezl",
-]
-
-[[package]]
-name = "timer"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31d42176308937165701f50638db1c31586f183f1aab416268216577aec7306b"
-dependencies = [
- "chrono",
 ]
 
 [[package]]

@@ -67,8 +67,8 @@ impl NostrWidget for Chat {
                         ui.vertical(|ui| {
                             ui.spacing_mut().item_spacing.y = 8.0;
                             for ev in events.iter().sorted_by(|a, b| {
-                                a.starts().cmp(&b.starts())
-                            }) {
+                                a.created_at().cmp(&b.created_at())
+                            }).tail(20) {
                                 ChatMessage::new(&stream, ev, services).ui(ui);
                             }
                         })
