@@ -19,14 +19,15 @@ bech32 = "0.11.0"
 libc = "0.2.158"
 uuid = { version = "1.11.0", features = ["v4"] }
 chrono = "0.4.38"
-anyhow = "1.0.89"
+anyhow = "^1.0.91"
 async-trait = "0.1.83"
 sha2 = "0.10.8"
 reqwest = { version = "0.12.7", default-features = false, features = ["rustls-tls-native-roots"] }
 itertools = "0.13.0"
 lru = "0.12.5"
 
-egui-video = { git = "https://github.com/v0l/egui-video.git", rev = "eb2675dd5206d064afdd82ea72c0fac083596d86" }
+egui-video = { git = "https://github.com/v0l/egui-video.git", rev = "ced65d0bb4d2d144b87c70518a04b767ba37c0c1" }
+resvg = { version = "0.44.0", default-features = false }
 #egui-video = { path = "../egui-video" }
 
 [target.'cfg(target_os = "android")'.dependencies]

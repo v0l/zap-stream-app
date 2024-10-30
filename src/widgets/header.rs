@@ -24,7 +24,9 @@ impl NostrWidget for Header {
                     Layout::left_to_right(Align::Center),
                     |ui| {
                         ui.style_mut().spacing.item_spacing.x = 16.;
-                        if Image::from_bytes("logo.svg", logo_bytes)
+                        if services
+                            .img_cache
+                            .load_bytes("logo.svg", logo_bytes)
                             .max_height(24.)
                             .sense(Sense::click())
                             .ui(ui)

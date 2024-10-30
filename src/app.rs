@@ -1,18 +1,24 @@
 use crate::route::Router;
 use eframe::{App, CreationContext, Frame};
-use egui::{Color32, Context};
+use egui::{Color32, Context, Margin};
 use nostr_sdk::database::MemoryDatabase;
 use nostr_sdk::Client;
 use nostrdb::{Config, Ndb};
 use std::path::PathBuf;
 
-pub struct ZapStreamApp {
+pub struct ZapStreamApp<T> {
     client: Client,
     router: Router,
+    config: T,
 }
 
-impl ZapStreamApp {
-    pub fn new(cc: &CreationContext, data_path: PathBuf) -> Self {
+/// Trait to wrap native configuration layers
+pub trait AppConfig {
+    fn frame_margin(&self) -> Margin;
+}
+
+impl<T> ZapStreamApp<T> {
+    pub fn new(cc: &CreationContext, data_path: PathBuf, config: T) -> Self {
         let client = Client::builder()
             .database(MemoryDatabase::with_opts(Default::default()))
             .build();
@@ -45,13 +51,20 @@ impl ZapStreamApp {
         Self {
             client: client.clone(),
             router: Router::new(data_path, cc.egui_ctx.clone(), client.clone(), ndb.clone()),
+            config,
         }
     }
 }
 
-impl App for ZapStreamApp {
+impl<T> App for ZapStreamApp<T>
+where
+    T: AppConfig,
+{
     fn update(&mut self, ctx: &Context, frame: &mut Frame) {
         let mut app_frame = egui::containers::Frame::default();
+        let margin = self.config.frame_margin();
+
+        app_frame.inner_margin = margin;
         app_frame.stroke.color = Color32::BLACK;
 
         //ctx.set_debug_on_hover(true);

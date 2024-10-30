@@ -3,11 +3,12 @@ use crate::theme::NEUTRAL_800;
 use anyhow::Error;
 use eframe::epaint::Color32;
 use egui::load::SizedTexture;
-use egui::{ColorImage, Context, Image, ImageData, TextureHandle, TextureOptions};
+use egui::{ColorImage, Context, Image, ImageData, SizeHint, TextureHandle, TextureOptions};
 use itertools::Itertools;
 use log::{error, info};
 use lru::LruCache;
 use nostr_sdk::util::hex;
+use resvg::usvg::Transform;
 use sha2::{Digest, Sha256};
 use std::collections::HashSet;
 use std::fs;
@@ -55,6 +56,33 @@ impl ImageCache {
         self.dir
             .join(PathBuf::from(hash[0..2].to_string()))
             .join(PathBuf::from(hash))
+    }
+
+    fn load_bytes_impl(url: &str, bytes: &'static [u8]) -> Result<ColorImage, Error> {
+        if url.ends_with(".svg") {
+            Self::load_svg(bytes)
+        } else {
+            let mut loader = FfmpegLoader::new();
+            loader.load_image_bytes(url, bytes)
+        }
+    }
+
+    pub fn load_bytes<'a, U>(&self, url: U, bytes: &'static [u8]) -> Image<'a>
+    where
+        U: Into<String>,
+    {
+        let url = url.into();
+        match Self::load_bytes_impl(&url, bytes) {
+            Ok(i) => {
+                let tex = self
+                    .ctx
+                    .load_texture(url, ImageData::from(i), TextureOptions::default());
+                Image::from_texture(&tex)
+            }
+            Err(e) => {
+                panic!("Failed to load image: {}", e);
+            }
+        }
     }
 
     pub fn load<'a, U>(&self, url: U) -> Image<'a>
@@ -118,5 +146,26 @@ impl ImageCache {
                 None
             }
         }
+    }
+
+    fn load_svg(svg: &[u8]) -> Result<ColorImage, Error> {
+        use resvg::tiny_skia::Pixmap;
+        use resvg::usvg::{Options, Tree};
+
+        let opt = Options::default();
+        let mut rtree = Tree::from_data(svg, &opt)
+            .map_err(|err| err.to_string())
+            .map_err(|e| Error::msg(e))?;
+
+        let size = rtree.size().to_int_size();
+        let (w, h) = (size.width(), size.height());
+
+        let mut pixmap = Pixmap::new(w, h)
+            .ok_or_else(|| Error::msg(format!("Failed to create SVG Pixmap of size {w}x{h}")))?;
+
+        resvg::render(&rtree, Transform::default(), &mut pixmap.as_mut());
+        let image = ColorImage::from_rgba_unmultiplied([w as _, h as _], pixmap.data());
+
+        Ok(image)
     }
 }

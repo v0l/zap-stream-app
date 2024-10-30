@@ -1,7 +1,8 @@
 use crate::route::RouteServices;
 use crate::theme::NEUTRAL_900;
 use crate::widgets::NostrWidget;
-use egui::{Frame, Image, Margin, Response, Rounding, Sense, Stroke, TextEdit, Ui, Widget};
+use eframe::emath::Align;
+use egui::{Frame, Image, Layout, Margin, Response, Rounding, Sense, Stroke, TextEdit, Ui, Widget};
 use log::info;
 
 pub struct WriteChat {
@@ -25,12 +26,12 @@ impl NostrWidget for WriteChat {
                 Frame::none()
                     .fill(NEUTRAL_900)
                     .rounding(Rounding::same(12.0))
-                    .inner_margin(Margin::symmetric(12., 12.))
+                    .inner_margin(Margin::symmetric(12., 10.))
                     .show(ui, |ui| {
                         ui.horizontal(|ui| {
-                            let editor = TextEdit::singleline(&mut self.msg).frame(false);
-                            ui.add(editor);
-                            if Image::from_bytes("send-03.svg", logo_bytes)
+                            if services
+                                .img_cache
+                                .load_bytes("send-03.svg", logo_bytes)
                                 .sense(Sense::click())
                                 .ui(ui)
                                 .clicked()
@@ -38,6 +39,9 @@ impl NostrWidget for WriteChat {
                                 info!("Sending: {}", self.msg);
                                 self.msg.clear();
                             }
+
+                            let editor = TextEdit::singleline(&mut self.msg).frame(false);
+                            ui.add_sized(ui.available_size(), editor);
                         });
                     })
             })

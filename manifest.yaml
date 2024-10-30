@@ -1,6 +1,14 @@
+
+icon: "./assets/logo.png"
 android:
   manifest:
     package: stream.zap.app
+    version_code: 1
+    version_name: "0.1.0"
+    application:
+      label: "zap.stream"
+      activities:
+        - hardware_accelerated: true
     uses_permission:
       - name: "android.permission.WRITE_EXTERNAL_STORAGE"
       - name: "android.permission.READ_EXTERNAL_STORAGE"
