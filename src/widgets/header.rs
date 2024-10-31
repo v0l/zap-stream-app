@@ -1,3 +1,4 @@
+use crate::login::LoginKind;
 use crate::route::{RouteServices, Routes};
 use crate::widgets::avatar::Avatar;
 use crate::widgets::{Button, NostrWidget};
@@ -14,7 +15,7 @@ impl Header {
 }
 
 impl NostrWidget for Header {
-    fn render(&mut self, ui: &mut Ui, services: &RouteServices<'_>) -> Response {
+    fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_>) -> Response {
         let logo_bytes = include_bytes!("../resources/logo.svg");
         Frame::none()
             .outer_margin(Margin::symmetric(16., 8.))
@@ -37,8 +38,8 @@ impl NostrWidget for Header {
                         }
 
                         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                            if let Some(pk) = services.login {
-                                ui.add(Avatar::pubkey(pk, services));
+                            if let Some(pk) = services.login.public_key() {
+                                ui.add(Avatar::pubkey(&pk, services));
                             } else if Button::new().show(ui, |ui| ui.label("Login")).clicked() {
                                 services.navigate(Routes::LoginPage);
                             }

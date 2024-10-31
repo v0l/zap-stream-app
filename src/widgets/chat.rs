@@ -39,7 +39,7 @@ impl Chat {
 }
 
 impl NostrWidget for Chat {
-    fn render(&mut self, ui: &mut Ui, services: &RouteServices<'_>) -> Response {
+    fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_>) -> Response {
         let poll = services.ndb.poll(&self.sub, 500);
         poll.iter()
             .for_each(|n| self.events.push(OwnedNote(n.as_u64())));

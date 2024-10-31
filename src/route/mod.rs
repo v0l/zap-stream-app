@@ -1,4 +1,6 @@
+use crate::app::NativeLayerOps;
 use crate::link::NostrLink;
+use crate::login::{Login, LoginKind};
 use crate::note_util::OwnedNote;
 use crate::route::home::HomePage;
 use crate::route::login::LoginPage;
@@ -9,7 +11,7 @@ use crate::widgets::{Header, NostrWidget};
 use egui::{Context, Response, Ui};
 use egui_inbox::{UiInbox, UiInboxSender};
 use log::{info, warn};
-use nostr_sdk::Client;
+use nostr_sdk::{Client, Event, JsonUtil};
 use nostrdb::{Ndb, Transaction};
 use std::path::PathBuf;
 
@@ -36,24 +38,40 @@ pub enum Routes {
 
 #[derive(PartialEq)]
 pub enum RouteAction {
-    /// Login with public key
-    LoginPubkey([u8; 32]),
+    ShowKeyboard,
+    HideKeyboard,
 }
 
-pub struct Router {
+pub struct Router<T: NativeLayerOps> {
     current: Routes,
     current_widget: Option<Box<dyn NostrWidget>>,
     router: UiInbox<Routes>,
 
     ctx: Context,
     ndb: NDBWrapper,
-    login: Option<[u8; 32]>,
+    login: Login,
     client: Client,
     image_cache: ImageCache,
+    native_layer: T,
 }
 
-impl Router {
-    pub fn new(data_path: PathBuf, ctx: Context, client: Client, ndb: Ndb) -> Self {
+impl<T: NativeLayerOps> Drop for Router<T> {
+    fn drop(&mut self) {
+        self.login.save(&mut self.native_layer)
+    }
+}
+
+impl<T: NativeLayerOps> Router<T> {
+    pub fn new(
+        data_path: PathBuf,
+        ctx: Context,
+        client: Client,
+        ndb: Ndb,
+        native_layer: T,
+    ) -> Self {
+        let mut login = Login::new();
+        login.load(&native_layer);
+
         Self {
             current: Routes::HomePage,
             current_widget: None,
@@ -61,8 +79,9 @@ impl Router {
             ctx: ctx.clone(),
             ndb: NDBWrapper::new(ctx.clone(), ndb.clone(), client.clone()),
             client,
-            login: None,
+            login,
             image_cache: ImageCache::new(data_path, ctx.clone()),
+            native_layer,
         }
     }
 
@@ -91,9 +110,10 @@ impl Router {
         // handle app state changes
         let q = self.router.read(ui);
         for r in q {
-            if let Routes::Action(a) = &r {
+            if let Routes::Action(a) = r {
                 match a {
-                    RouteAction::LoginPubkey(k) => self.login = Some(*k),
+                    RouteAction::ShowKeyboard => self.native_layer.show_keyboard(),
+                    RouteAction::HideKeyboard => self.native_layer.hide_keyboard(),
                     _ => info!("Not implemented"),
                 }
             } else {
@@ -106,20 +126,21 @@ impl Router {
             self.load_widget(Routes::HomePage, &tx);
         }
 
-        let svc = RouteServices {
+        let mut svc = RouteServices {
             context: self.ctx.clone(),
             router: self.router.sender(),
+            client: self.client.clone(),
             ndb: &self.ndb,
             tx: &tx,
-            login: &self.login,
+            login: &mut self.login,
             img_cache: &self.image_cache,
         };
 
         // display app
         ui.vertical(|ui| {
-            Header::new().render(ui, &svc);
+            Header::new().render(ui, &mut svc);
             if let Some(w) = self.current_widget.as_mut() {
-                w.render(ui, &svc)
+                w.render(ui, &mut svc)
             } else {
                 ui.label("No widget")
             }
@@ -131,11 +152,12 @@ impl Router {
 pub struct RouteServices<'a> {
     pub context: Context,              //cloned
     pub router: UiInboxSender<Routes>, //cloned
+    pub client: Client,
 
-    pub ndb: &'a NDBWrapper,         //ref
-    pub tx: &'a Transaction,         //ref
-    pub login: &'a Option<[u8; 32]>, //ref
-    pub img_cache: &'a ImageCache,
+    pub ndb: &'a NDBWrapper,       //ref
+    pub tx: &'a Transaction,       //ref
+    pub login: &'a mut Login,      //ref
+    pub img_cache: &'a ImageCache, //ref
 }
 
 impl<'a> RouteServices<'a> {
@@ -149,5 +171,22 @@ impl<'a> RouteServices<'a> {
         if let Err(e) = self.router.send(Routes::Action(route)) {
             warn!("Failed to navigate");
         }
+    }
+
+    pub fn broadcast_event(&self, event: Event) {
+        let client = self.client.clone();
+
+        let ev_json = event.as_json();
+        if let Err(e) = self.ndb.submit_event(&ev_json) {
+            warn!("Failed to submit event {}", e);
+        }
+        tokio::spawn(async move {
+            match client.send_event(event).await {
+                Ok(e) => {
+                    info!("Broadcast event: {:?}", e)
+                }
+                Err(e) => warn!("Failed to broadcast event: {:?}", e),
+            }
+        });
     }
 }

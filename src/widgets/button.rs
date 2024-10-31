@@ -1,4 +1,4 @@
-use crate::theme::NEUTRAL_800;
+use crate::theme::{NEUTRAL_800, ROUNDING_DEFAULT};
 use egui::{Color32, CursorIcon, Frame, Margin, Response, Sense, Ui};
 
 pub struct Button {
@@ -17,7 +17,7 @@ impl Button {
         let r = Frame::none()
             .inner_margin(Margin::symmetric(12., 8.))
             .fill(self.color)
-            .rounding(12.)
+            .rounding(ROUNDING_DEFAULT)
             .show(ui, add_contents);
 
         let id = r.response.id;

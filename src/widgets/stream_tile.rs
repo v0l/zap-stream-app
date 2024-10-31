@@ -1,7 +1,7 @@
 use crate::link::NostrLink;
 use crate::route::{RouteServices, Routes};
 use crate::stream_info::{StreamInfo, StreamStatus};
-use crate::theme::{NEUTRAL_800, NEUTRAL_900, PRIMARY};
+use crate::theme::{NEUTRAL_800, NEUTRAL_900, PRIMARY, ROUNDING_DEFAULT};
 use crate::widgets::avatar::Avatar;
 use eframe::epaint::{Rounding, Vec2};
 use egui::epaint::RectShape;
@@ -44,7 +44,7 @@ impl Widget for StreamEvent<'_> {
                     Ok(TexturePoll::Ready { texture }) => {
                         painter.add(RectShape {
                             rect: response.rect,
-                            rounding: Rounding::same(12.),
+                            rounding: Rounding::same(ROUNDING_DEFAULT),
                             fill: Color32::WHITE,
                             stroke: Default::default(),
                             blur_width: 0.0,

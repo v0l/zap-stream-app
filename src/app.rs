@@ -6,18 +6,30 @@ use nostr_sdk::Client;
 use nostrdb::{Config, Ndb};
 use std::path::PathBuf;
 
-pub struct ZapStreamApp<T> {
+pub struct ZapStreamApp<T: NativeLayerOps> {
     client: Client,
-    router: Router,
-    config: T,
+    router: Router<T>,
+    native_layer: T,
 }
 
-/// Trait to wrap native configuration layers
-pub trait AppConfig {
+pub trait NativeLayerOps {
+    /// Get any display layout margins
     fn frame_margin(&self) -> Margin;
+    /// Show the keyboard on the screen
+    fn show_keyboard(&self);
+    /// Hide on screen keyboard
+    fn hide_keyboard(&self);
+    fn get(&self, k: &str) -> Option<String>;
+    fn set(&mut self, k: &str, v: &str) -> bool;
+    fn remove(&mut self, k: &str) -> bool;
+    fn get_obj<T: serde::de::DeserializeOwned>(&self, k: &str) -> Option<T>;
+    fn set_obj<T: serde::Serialize>(&mut self, k: &str, v: &T) -> bool;
 }
 
-impl<T> ZapStreamApp<T> {
+impl<T> ZapStreamApp<T>
+where
+    T: NativeLayerOps + Clone,
+{
     pub fn new(cc: &CreationContext, data_path: PathBuf, config: T) -> Self {
         let client = Client::builder()
             .database(MemoryDatabase::with_opts(Default::default()))
@@ -48,21 +60,28 @@ impl<T> ZapStreamApp<T> {
 
         let ndb = Ndb::new(ndb_path.to_str().unwrap(), &ndb_config).unwrap();
 
+        let cfg = config.clone();
         Self {
             client: client.clone(),
-            router: Router::new(data_path, cc.egui_ctx.clone(), client.clone(), ndb.clone()),
-            config,
+            router: Router::new(
+                data_path,
+                cc.egui_ctx.clone(),
+                client.clone(),
+                ndb.clone(),
+                cfg,
+            ),
+            native_layer: config,
         }
     }
 }
 
 impl<T> App for ZapStreamApp<T>
 where
-    T: AppConfig,
+    T: NativeLayerOps,
 {
     fn update(&mut self, ctx: &Context, frame: &mut Frame) {
         let mut app_frame = egui::containers::Frame::default();
-        let margin = self.config.frame_margin();
+        let margin = self.native_layer.frame_margin();
 
         app_frame.inner_margin = margin;
         app_frame.stroke.color = Color32::BLACK;

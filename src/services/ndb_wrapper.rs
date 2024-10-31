@@ -154,4 +154,8 @@ impl NDBWrapper {
         let sub = None;
         (p, sub)
     }
+
+    pub fn submit_event(&self, ev: &str) -> Result<(), Error> {
+        self.ndb.process_event(ev)
+    }
 }

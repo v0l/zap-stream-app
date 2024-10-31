@@ -16,7 +16,7 @@ impl<'a> StreamTitle<'a> {
 }
 
 impl<'a> NostrWidget for StreamTitle<'a> {
-    fn render(&mut self, ui: &mut Ui, services: &RouteServices<'_>) -> Response {
+    fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_>) -> Response {
         Frame::none()
             .outer_margin(Margin::symmetric(12., 8.))
             .show(ui, |ui| {

@@ -27,7 +27,7 @@ impl HomePage {
 }
 
 impl NostrWidget for HomePage {
-    fn render(&mut self, ui: &mut Ui, services: &RouteServices<'_>) -> Response {
+    fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_>) -> Response {
         let new_notes = services.ndb.poll(&self.sub, 100);
         new_notes
             .iter()

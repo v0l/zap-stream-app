@@ -23,18 +23,18 @@ impl StreamPage {
         let f = [f.limit_mut(1)];
         let (sub, events) = ndb.subscribe_with_results("streams", &f, tx, 1);
         Self {
-            link,
+            link: link.clone(),
             sub,
             event: events.first().map(|n| OwnedNote(n.note_key.as_u64())),
             chat: None,
             player: None,
-            new_msg: WriteChat::new(),
+            new_msg: WriteChat::new(link),
         }
     }
 }
 
 impl NostrWidget for StreamPage {
-    fn render(&mut self, ui: &mut Ui, services: &RouteServices<'_>) -> Response {
+    fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_>) -> Response {
         let poll = services.ndb.poll(&self.sub, 1);
         if let Some(k) = poll.first() {
             self.event = Some(OwnedNote(k.as_u64()))
