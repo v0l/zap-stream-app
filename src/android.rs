@@ -1,7 +1,9 @@
-use crate::app::{NativeLayer, NativeSecureStorage, ZapStreamApp};
+use crate::app::{NativeLayerOps, ZapStreamApp};
 use crate::av_log_redirect;
 use eframe::Renderer;
 use egui::{Margin, ViewportBuilder};
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 use std::ops::Div;
 use winit::platform::android::activity::AndroidApp;
 use winit::platform::android::EventLoopBuilderExtAndroid;
@@ -36,13 +38,13 @@ pub fn start_android(app: AndroidApp) {
     if let Err(e) = eframe::run_native(
         "zap.stream",
         options,
-        Box::new(move |cc| Ok(Box::new(ZapStreamApp::new(cc, data_path, Box::new(app))))),
+        Box::new(move |cc| Ok(Box::new(ZapStreamApp::new(cc, data_path, app)))),
     ) {
         eprintln!("{}", e);
     }
 }
 
-impl NativeLayer for AndroidApp {
+impl NativeLayerOps for AndroidApp {
     fn frame_margin(&self) -> Margin {
         if let Some(wd) = self.native_window() {
             let (w, h) = (wd.width(), wd.height());
@@ -70,12 +72,6 @@ impl NativeLayer for AndroidApp {
         self.hide_soft_input(true);
     }
 
-    fn secure_storage(&self) -> Box<dyn NativeSecureStorage> {
-        Box::new(self.clone())
-    }
-}
-
-impl NativeSecureStorage for AndroidApp {
     fn get(&self, k: &str) -> Option<String> {
         None
     }
@@ -85,6 +81,14 @@ impl NativeSecureStorage for AndroidApp {
     }
 
     fn remove(&mut self, k: &str) -> bool {
+        false
+    }
+
+    fn get_obj<T: DeserializeOwned>(&self, k: &str) -> Option<T> {
+        None
+    }
+
+    fn set_obj<T: Serialize>(&mut self, k: &str, v: &T) -> bool {
         false
     }
 }

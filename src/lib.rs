@@ -32,7 +32,7 @@ pub unsafe extern "C" fn av_log_redirect(
     use egui_video::ffmpeg_sys_the_third::*;
     let log_level = match level {
         AV_LOG_DEBUG => log::Level::Debug,
-        AV_LOG_WARNING => log::Level::Warn,
+        AV_LOG_WARNING => log::Level::Debug, // downgrade to debug (spammy)
         AV_LOG_INFO => log::Level::Info,
         AV_LOG_ERROR => log::Level::Error,
         AV_LOG_PANIC => log::Level::Error,

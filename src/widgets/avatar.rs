@@ -1,7 +1,7 @@
 use crate::route::RouteServices;
 use crate::services::image_cache::ImageCache;
 use crate::services::ndb_wrapper::SubWrapper;
-use egui::{Color32, Image, Pos2, Response, Rounding, Sense, Ui, Vec2, Widget};
+use egui::{vec2, Color32, Image, Pos2, Response, Rounding, Sense, Ui, Vec2, Widget};
 use nostrdb::NdbProfile;
 
 pub struct Avatar<'a> {
@@ -49,26 +49,31 @@ impl<'a> Avatar<'a> {
         self.size = Some(size);
         self
     }
+
+    fn placeholder(ui: &mut Ui, size: f32) -> Response {
+        let (response, painter) = ui.allocate_painter(vec2(size, size), Sense::click());
+        painter.circle_filled(
+            Pos2::new(size / 2., size / 2.),
+            size / 2.,
+            Color32::from_rgb(200, 200, 200),
+        );
+        response
+    }
 }
 
 impl<'a> Widget for Avatar<'a> {
     fn ui(self, ui: &mut Ui) -> Response {
         let size_v = self.size.unwrap_or(40.);
         let size = Vec2::new(size_v, size_v);
+        if !ui.is_rect_visible(ui.cursor()) {
+            return Self::placeholder(ui, size_v);
+        }
         match self.image {
             Some(img) => img
                 .fit_to_exact_size(size)
                 .rounding(Rounding::same(size_v))
                 .ui(ui),
-            None => {
-                let (response, painter) = ui.allocate_painter(size, Sense::click());
-                painter.circle_filled(
-                    Pos2::new(size_v / 2., size_v / 2.),
-                    size_v / 2.,
-                    Color32::from_rgb(200, 200, 200),
-                );
-                response
-            }
+            None => Self::placeholder(ui, size_v),
         }
     }
 }

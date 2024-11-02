@@ -2,7 +2,6 @@ use crate::link::NostrLink;
 use crate::note_util::OwnedNote;
 use crate::route::RouteServices;
 use crate::services::ndb_wrapper::{NDBWrapper, SubWrapper};
-use crate::stream_info::StreamInfo;
 use crate::widgets::chat_message::ChatMessage;
 use crate::widgets::NostrWidget;
 use egui::{Frame, Margin, Response, ScrollArea, Ui, Widget};
@@ -71,7 +70,6 @@ impl NostrWidget for Chat {
                             for ev in events
                                 .iter()
                                 .sorted_by(|a, b| a.created_at().cmp(&b.created_at()))
-                                .tail(20)
                             {
                                 ChatMessage::new(&stream, ev, services).ui(ui);
                             }

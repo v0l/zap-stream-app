@@ -1,5 +1,4 @@
-use eframe::Renderer;
-use egui::{Margin, Vec2};
+use egui::{Margin, Vec2, ViewportBuilder};
 use nostr_sdk::serde_json;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -19,8 +18,7 @@ async fn main() {
         egui_video::ffmpeg_sys_the_third::av_log_set_callback(Some(av_log_redirect));
     }
     let mut options = eframe::NativeOptions::default();
-    options.renderer = Renderer::Glow;
-    options.viewport = options.viewport.with_inner_size(Vec2::new(360., 720.));
+    options.viewport = ViewportBuilder::default().with_inner_size(Vec2::new(1280., 720.));
 
     let data_path = PathBuf::from("./.data");
     let config = DesktopApp::new(data_path.clone());
