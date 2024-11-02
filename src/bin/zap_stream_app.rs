@@ -18,7 +18,7 @@ async fn main() {
         egui_video::ffmpeg_sys_the_third::av_log_set_callback(Some(av_log_redirect));
     }
     let mut options = eframe::NativeOptions::default();
-    options.viewport = ViewportBuilder::default().with_inner_size(Vec2::new(1280., 720.));
+    options.viewport = ViewportBuilder::default().with_inner_size(Vec2::new(1300., 900.));
 
     let data_path = PathBuf::from("./.data");
     let config = DesktopApp::new(data_path.clone());

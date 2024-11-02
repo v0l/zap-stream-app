@@ -17,7 +17,9 @@ use log::log;
 use std::ffi::CStr;
 use std::ptr;
 
-#[cfg(not(target_os = "android"))]
+#[cfg(target_os = "macos")]
+type VaList = egui_video::ffmpeg_sys_the_third::va_list;
+#[cfg(target_os = "linux")]
 type VaList = *mut egui_video::ffmpeg_sys_the_third::__va_list_tag;
 #[cfg(target_os = "android")]
 type VaList = [u64; 4];
