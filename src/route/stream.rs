@@ -4,7 +4,7 @@ use crate::route::RouteServices;
 use crate::services::ndb_wrapper::{NDBWrapper, SubWrapper};
 use crate::stream_info::StreamInfo;
 use crate::theme::{MARGIN_DEFAULT, NEUTRAL_800, ROUNDING_DEFAULT};
-use crate::widgets::{Chat, NostrWidget, StreamPlayer, StreamTitle, WriteChat};
+use crate::widgets::{Chat, NostrWidget, PlaceholderRect, StreamPlayer, StreamTitle, WriteChat};
 use egui::{vec2, Align, Frame, Layout, Response, Stroke, Ui, Vec2, Widget};
 use nostrdb::{Filter, Note, NoteKey, Transaction};
 use std::borrow::Borrow;
@@ -47,11 +47,15 @@ impl StreamPage {
             Vec2::new(w, h),
             Layout::top_down_justified(Align::Min),
             |ui| {
-                if let Some(player) = &mut self.player {
-                    let video_h =
-                        ((ui.available_width() / 16.0) * 9.0).min(ui.available_height() * 0.33);
-                    ui.allocate_ui(vec2(ui.available_width(), video_h), |ui| player.ui(ui));
-                }
+                let video_h =
+                    ((ui.available_width() / 16.0) * 9.0).min(ui.available_height() * 0.33);
+                ui.allocate_ui(vec2(ui.available_width(), video_h), |ui| {
+                    if let Some(player) = &mut self.player {
+                        player.ui(ui)
+                    } else {
+                        ui.add(PlaceholderRect)
+                    }
+                });
                 StreamTitle::new(&event).render(ui, services);
 
                 if let Some(c) = self.chat.as_mut() {
@@ -87,9 +91,13 @@ impl StreamPage {
             Layout::left_to_right(Align::TOP).with_main_justify(true),
             |ui| {
                 ui.vertical(|ui| {
-                    if let Some(player) = &mut self.player {
-                        ui.allocate_ui(vec2(video_width, video_height), |ui| player.ui(ui));
-                    }
+                    ui.allocate_ui(vec2(video_width, video_height), |ui| {
+                        if let Some(player) = &mut self.player {
+                            player.ui(ui)
+                        } else {
+                            ui.add(PlaceholderRect)
+                        }
+                    });
                     ui.add_space(10.);
                     StreamTitle::new(&event).render(ui, services);
                 });

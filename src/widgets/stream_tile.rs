@@ -53,11 +53,11 @@ impl Widget for StreamEvent<'_> {
                         });
                     }
                     _ => {
-                        painter.rect_filled(response.rect, 12., NEUTRAL_800);
+                        painter.rect_filled(response.rect, ROUNDING_DEFAULT, NEUTRAL_800);
                     }
                 }
             } else {
-                painter.rect_filled(response.rect, 12., NEUTRAL_800);
+                painter.rect_filled(response.rect, ROUNDING_DEFAULT, NEUTRAL_800);
             }
 
             let overlay_label_pad = Vec2::new(5., 5.);

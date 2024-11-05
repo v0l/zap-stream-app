@@ -1,4 +1,4 @@
-use crate::widgets::VideoPlaceholder;
+use crate::widgets::PlaceholderRect;
 use egui::{Context, Response, Ui, Vec2, Widget};
 use egui_video::{Player, PlayerControls};
 
@@ -22,7 +22,7 @@ impl Widget for &mut StreamPlayer {
         if let Some(p) = self.player.as_mut() {
             ui.add_sized(size, p)
         } else {
-            VideoPlaceholder.ui(ui)
+            PlaceholderRect.ui(ui)
         }
     }
 }
