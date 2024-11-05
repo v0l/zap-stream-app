@@ -77,6 +77,9 @@ impl Login {
     }
 
     pub fn write_live_chat_msg(&self, link: &NostrLink, msg: &str) -> Result<Event, Error> {
+        if msg.len() == 0 {
+            return Err(anyhow::anyhow!("Empty message"));
+        }
         let secret = self.secret_key()?;
         EventBuilder::new(Kind::LiveEventMessage, msg, [Tag::parse(&link.to_tag())?])
             .to_event(&secret)

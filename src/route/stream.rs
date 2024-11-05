@@ -3,8 +3,9 @@ use crate::note_util::OwnedNote;
 use crate::route::RouteServices;
 use crate::services::ndb_wrapper::{NDBWrapper, SubWrapper};
 use crate::stream_info::StreamInfo;
+use crate::theme::{MARGIN_DEFAULT, NEUTRAL_800, ROUNDING_DEFAULT};
 use crate::widgets::{Chat, NostrWidget, StreamPlayer, StreamTitle, WriteChat};
-use egui::{vec2, Response, Ui, Vec2, Widget};
+use egui::{vec2, Align, Frame, Layout, Response, Stroke, Ui, Vec2, Widget};
 use nostrdb::{Filter, Note, NoteKey, Transaction};
 use std::borrow::Borrow;
 
@@ -37,31 +38,37 @@ impl StreamPage {
         ui: &mut Ui,
         services: &mut RouteServices<'_>,
     ) -> Response {
-        if let Some(player) = &mut self.player {
-            player.ui(ui);
-        }
-        StreamTitle::new(&event).render(ui, services);
-
         let chat_h = 60.0;
         let w = ui.available_width();
         let h = ui
             .available_height()
-            .max(ui.available_rect_before_wrap().height())
-            .max(chat_h);
-        ui.allocate_ui(Vec2::new(w, h - chat_h), |ui| {
-            if let Some(c) = self.chat.as_mut() {
-                c.render(ui, services);
-            } else {
-                ui.label("Loading..");
-            }
-            // consume rest of space
-            if ui.available_height().is_finite() {
-                ui.add_space(ui.available_height());
-            }
-        });
-        ui.allocate_ui(vec2(w, chat_h), |ui| {
-            self.new_msg.render(ui, services);
-        });
+            .max(ui.available_rect_before_wrap().height());
+        ui.allocate_ui_with_layout(
+            Vec2::new(w, h),
+            Layout::top_down_justified(Align::Min),
+            |ui| {
+                if let Some(player) = &mut self.player {
+                    let video_h =
+                        ((ui.available_width() / 16.0) * 9.0).min(ui.available_height() * 0.33);
+                    ui.allocate_ui(vec2(ui.available_width(), video_h), |ui| player.ui(ui));
+                }
+                StreamTitle::new(&event).render(ui, services);
+
+                if let Some(c) = self.chat.as_mut() {
+                    ui.allocate_ui(
+                        vec2(ui.available_width(), ui.available_height() - chat_h),
+                        |ui| c.render(ui, services),
+                    );
+                } else {
+                    ui.label("Loading..");
+                }
+                // consume rest of space
+                if ui.available_height().is_finite() {
+                    ui.add_space(ui.available_height() - chat_h);
+                }
+                self.new_msg.render(ui, services);
+            },
+        );
         ui.response()
     }
 
@@ -76,33 +83,45 @@ impl StreamPage {
         let video_width = ui.available_width() - chat_w;
         let video_height = max_h.min((video_width / 16.0) * 9.0);
 
-        ui.horizontal_top(|ui| {
-            ui.vertical(|ui| {
-                if let Some(player) = &mut self.player {
-                    ui.allocate_ui(vec2(video_width, video_height), |ui| player.ui(ui));
-                }
-                ui.add_space(10.);
-                StreamTitle::new(&event).render(ui, services);
-            });
-            ui.allocate_ui(vec2(chat_w, max_h), |ui| {
+        ui.with_layout(
+            Layout::left_to_right(Align::TOP).with_main_justify(true),
+            |ui| {
                 ui.vertical(|ui| {
-                    let chat_h = 60.0;
-                    if let Some(c) = self.chat.as_mut() {
-                        ui.allocate_ui(vec2(chat_w, max_h - chat_h), |ui| {
-                            c.render(ui, services);
-                            if ui.available_height().is_finite() {
-                                ui.add_space(ui.available_height() - chat_h);
-                            }
-                        });
-                    } else {
-                        ui.label("Loading..");
+                    if let Some(player) = &mut self.player {
+                        ui.allocate_ui(vec2(video_width, video_height), |ui| player.ui(ui));
                     }
-                    ui.allocate_ui(vec2(chat_w, chat_h), |ui| {
-                        self.new_msg.render(ui, services);
-                    });
-                })
-            });
-        });
+                    ui.add_space(10.);
+                    StreamTitle::new(&event).render(ui, services);
+                });
+                ui.allocate_ui_with_layout(
+                    vec2(chat_w, max_h),
+                    Layout::top_down_justified(Align::Min),
+                    |ui| {
+                        Frame::none()
+                            .stroke(Stroke::new(1.0, NEUTRAL_800))
+                            .outer_margin(MARGIN_DEFAULT)
+                            .rounding(ROUNDING_DEFAULT)
+                            .show(ui, |ui| {
+                                let chat_h = 60.0;
+                                if let Some(c) = self.chat.as_mut() {
+                                    ui.allocate_ui(
+                                        vec2(ui.available_width(), ui.available_height() - chat_h),
+                                        |ui| {
+                                            c.render(ui, services);
+                                        },
+                                    );
+                                } else {
+                                    ui.label("Loading..");
+                                }
+                                if ui.available_height().is_finite() {
+                                    ui.add_space(ui.available_height() - chat_h);
+                                }
+                                self.new_msg.render(ui, services);
+                            });
+                    },
+                );
+            },
+        );
 
         ui.response()
     }

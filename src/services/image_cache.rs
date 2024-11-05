@@ -41,7 +41,7 @@ impl ImageCache {
             ctx,
             dir: out,
             placeholder,
-            cache: Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(100).unwrap()))),
+            cache: Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(1000).unwrap()))),
             fetch_cache: Arc::new(Mutex::new(HashSet::new())),
         }
     }

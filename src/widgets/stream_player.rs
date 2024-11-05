@@ -17,9 +17,7 @@ impl StreamPlayer {
 
 impl Widget for &mut StreamPlayer {
     fn ui(self, ui: &mut Ui) -> Response {
-        let w = ui.available_width();
-        let h = w / 16. * 9.;
-        let size = Vec2::new(w, h);
+        let size = ui.available_size();
 
         if let Some(p) = self.player.as_mut() {
             ui.add_sized(size, p)

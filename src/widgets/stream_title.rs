@@ -33,8 +33,10 @@ impl<'a> NostrWidget for StreamTitle<'a> {
                     .get_tag_value("summary")
                     .and_then(|r| r.variant().str())
                 {
-                    let summary = RichText::new(summary).color(Color32::WHITE);
-                    ui.add(Label::new(summary).wrap_mode(TextWrapMode::Truncate));
+                    if summary.len() > 0 {
+                        let summary = RichText::new(summary).color(Color32::WHITE);
+                        ui.add(Label::new(summary).wrap_mode(TextWrapMode::Truncate));
+                    }
                 }
             })
             .response
