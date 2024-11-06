@@ -1,9 +1,9 @@
 use crate::link::NostrLink;
-use crate::route::{RouteAction, RouteServices};
+use crate::route::RouteServices;
 use crate::theme::{MARGIN_DEFAULT, NEUTRAL_900, ROUNDING_DEFAULT};
 use crate::widgets::{NativeTextInput, NostrWidget};
 use eframe::emath::Align;
-use egui::{Frame, Image, Layout, Margin, Response, Rounding, Sense, Stroke, TextEdit, Ui, Widget};
+use egui::{Frame, Layout, Response, Sense, Ui, Widget};
 use log::info;
 
 pub struct WriteChat {

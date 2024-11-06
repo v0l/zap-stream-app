@@ -2,7 +2,7 @@ use crate::note_util::NoteUtil;
 use crate::route::RouteServices;
 use crate::stream_info::StreamInfo;
 use crate::widgets::{NostrWidget, Profile};
-use egui::{Color32, Frame, Label, Margin, Response, RichText, TextWrapMode, Ui, Widget};
+use egui::{Color32, Frame, Label, Margin, Response, RichText, TextWrapMode, Ui};
 use nostrdb::Note;
 
 pub struct StreamTitle<'a> {
@@ -26,7 +26,7 @@ impl<'a> NostrWidget for StreamTitle<'a> {
                     .color(Color32::WHITE);
                 ui.add(Label::new(title.strong()).wrap_mode(TextWrapMode::Truncate));
 
-                Profile::new(self.event.host(), services).size(32.).ui(ui);
+                ui.add(Profile::new(self.event.host(), services).size(32.));
 
                 if let Some(summary) = self
                     .event

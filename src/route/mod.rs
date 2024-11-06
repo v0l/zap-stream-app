@@ -1,6 +1,6 @@
 use crate::app::NativeLayerOps;
 use crate::link::NostrLink;
-use crate::login::{Login, LoginKind};
+use crate::login::Login;
 use crate::note_util::OwnedNote;
 use crate::route::home::HomePage;
 use crate::route::login::LoginPage;

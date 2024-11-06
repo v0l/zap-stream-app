@@ -16,7 +16,7 @@ impl<'a> StreamList<'a> {
     pub fn new(
         id: egui::Id,
         streams: &'a NoteStore<'a>,
-        services: &'a RouteServices,
+        services: &'a RouteServices<'a>,
         heading: Option<impl Into<WidgetText>>,
     ) -> Self {
         Self {

@@ -1,9 +1,7 @@
 use crate::services::ffmpeg_loader::FfmpegLoader;
 use crate::theme::NEUTRAL_800;
 use anyhow::Error;
-use eframe::epaint::Color32;
-use egui::load::SizedTexture;
-use egui::{ColorImage, Context, Image, ImageData, SizeHint, TextureHandle, TextureOptions};
+use egui::{ColorImage, Context, Image, ImageData, TextureHandle, TextureOptions};
 use itertools::Itertools;
 use log::{error, info};
 use lru::LruCache;
@@ -13,7 +11,6 @@ use sha2::{Digest, Sha256};
 use std::collections::HashSet;
 use std::fs;
 use std::num::NonZeroUsize;
-use std::ops::Deref;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
@@ -62,7 +59,7 @@ impl ImageCache {
         if url.ends_with(".svg") {
             Self::load_svg(bytes)
         } else {
-            let mut loader = FfmpegLoader::new();
+            let loader = FfmpegLoader::new();
             loader.load_image_bytes(url, bytes)
         }
     }
@@ -138,7 +135,7 @@ impl ImageCache {
     }
 
     async fn load_image(ctx: &Context, path: PathBuf, key: &str) -> Option<TextureHandle> {
-        let mut loader = FfmpegLoader::new();
+        let loader = FfmpegLoader::new();
         match loader.load_image(path) {
             Ok(i) => Some(ctx.load_texture(key, ImageData::from(i), TextureOptions::default())),
             Err(e) => {
@@ -153,7 +150,7 @@ impl ImageCache {
         use resvg::usvg::{Options, Tree};
 
         let opt = Options::default();
-        let mut rtree = Tree::from_data(svg, &opt)
+        let rtree = Tree::from_data(svg, &opt)
             .map_err(|err| err.to_string())
             .map_err(|e| Error::msg(e))?;
 

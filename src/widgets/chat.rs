@@ -4,7 +4,7 @@ use crate::route::RouteServices;
 use crate::services::ndb_wrapper::{NDBWrapper, SubWrapper};
 use crate::widgets::chat_message::ChatMessage;
 use crate::widgets::NostrWidget;
-use egui::{Frame, Margin, Response, ScrollArea, Ui, Widget};
+use egui::{Frame, Margin, Response, ScrollArea, Ui};
 use itertools::Itertools;
 use nostrdb::{Filter, Note, NoteKey, Transaction};
 
@@ -68,10 +68,11 @@ impl NostrWidget for Chat {
                         ui.vertical(|ui| {
                             ui.spacing_mut().item_spacing.y = 8.0;
                             for ev in events
-                                .iter()
+                                .into_iter()
                                 .sorted_by(|a, b| a.created_at().cmp(&b.created_at()))
                             {
-                                ChatMessage::new(&stream, ev, services).ui(ui);
+                                let c = ChatMessage::new(&stream, &ev, services);
+                                ui.add(c);
                             }
                         })
                     })

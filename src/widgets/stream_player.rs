@@ -1,5 +1,5 @@
 use crate::widgets::PlaceholderRect;
-use egui::{Context, Response, Ui, Vec2, Widget};
+use egui::{Context, Response, Ui, Widget};
 use egui_video::{Player, PlayerControls};
 
 pub struct StreamPlayer {

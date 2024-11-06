@@ -32,9 +32,14 @@ impl Widget for StreamEvent<'_> {
 
             let w = ui.available_width();
             let h = (w / 16.0) * 9.0;
-            let cover = self.event.image().map(|p| self.services.img_cache.load(p));
 
             let (response, painter) = ui.allocate_painter(Vec2::new(w, h), Sense::click());
+
+            let cover = if ui.is_visible() {
+                self.event.image().map(|p| self.services.img_cache.load(p))
+            } else {
+                None
+            };
 
             if let Some(cover) = cover.map(|c| {
                 c.rounding(Rounding::same(12.))
@@ -111,7 +116,7 @@ impl Widget for StreamEvent<'_> {
                 });
             }
             ui.horizontal(|ui| {
-                ui.add(Avatar::from_profile(&host_profile, self.services.img_cache).size(40.));
+                ui.add(Avatar::from_profile(&host_profile, self.services).size(40.));
                 let title = RichText::new(self.event.title().unwrap_or("Untitled"))
                     .size(16.)
                     .color(Color32::WHITE);

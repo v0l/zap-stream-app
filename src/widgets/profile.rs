@@ -12,6 +12,7 @@ pub struct Profile<'a> {
     profile: Option<NdbProfile<'a>>,
     sub: Option<SubWrapper>,
     img_cache: &'a ImageCache,
+    services: &'a RouteServices<'a>,
 }
 
 impl<'a> Profile<'a> {
@@ -24,6 +25,7 @@ impl<'a> Profile<'a> {
             profile: p,
             img_cache: services.img_cache,
             sub,
+            services,
         }
     }
 
@@ -37,7 +39,7 @@ impl<'a> Widget for Profile<'a> {
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 8.;
 
-            ui.add(Avatar::from_profile(&self.profile, self.img_cache).size(self.size));
+            ui.add(Avatar::from_profile(&self.profile, self.services).size(self.size));
             ui.add(Username::new(&self.profile, FONT_SIZE))
         })
         .response

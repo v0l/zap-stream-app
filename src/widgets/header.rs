@@ -1,10 +1,9 @@
-use crate::login::LoginKind;
 use crate::route::{RouteServices, Routes};
 use crate::widgets::avatar::Avatar;
 use crate::widgets::{Button, NostrWidget};
 use eframe::emath::Align;
 use eframe::epaint::Vec2;
-use egui::{CursorIcon, Frame, Image, Layout, Margin, Response, Sense, Ui, Widget};
+use egui::{CursorIcon, Frame, Layout, Margin, Response, Sense, Ui, Widget};
 
 pub struct Header;
 

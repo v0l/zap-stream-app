@@ -57,7 +57,7 @@ impl<'a> Widget for ChatMessage<'a> {
             format.color = Color32::WHITE;
             job.append(self.ev.content(), 5.0, format.clone());
 
-            ui.add(Avatar::from_profile(&profile, self.services.img_cache).size(24.));
+            ui.add(Avatar::from_profile(&profile, self.services).size(24.));
             ui.add(Label::new(job).wrap_mode(TextWrapMode::Wrap));
         })
         .response

@@ -1,6 +1,6 @@
 use anyhow::Error;
 use egui::ColorImage;
-use egui_video::ffmpeg_rs_raw::{Decoder, Demuxer, Scaler};
+use egui_video::ffmpeg_rs_raw::{get_frame_from_hw, Decoder, Demuxer, Scaler};
 use egui_video::ffmpeg_sys_the_third::{av_frame_free, av_packet_free, AVPixelFormat};
 use egui_video::media_player::video_frame_to_image;
 use std::path::PathBuf;
@@ -36,25 +36,23 @@ impl FfmpegLoader {
                 anyhow::bail!("Not a video/image");
             };
             let mut decode = Decoder::new();
-            let rgb = AVPixelFormat::AV_PIX_FMT_RGB24;
-            let mut scaler = Scaler::new(rgb);
+            let rgb = AVPixelFormat::AV_PIX_FMT_RGBA;
+            let mut scaler = Scaler::new();
 
             decode.setup_decoder(bv, None)?;
 
             let mut n_pkt = 0;
             loop {
                 let (mut pkt, stream) = demuxer.get_packet()?;
-                if pkt.is_null() {
-                    break;
-                }
                 if (*stream).index as usize == bv.index {
                     let frames = decode.decode_pkt(pkt, stream)?;
                     if let Some((frame, _)) = frames.first() {
-                        let mut frame = *frame;
+                        let mut frame = get_frame_from_hw(*frame)?;
                         let frame_rgb = scaler.process_frame(
                             frame,
                             (*frame).width as u16,
                             (*frame).height as u16,
+                            rgb,
                         )?;
                         av_frame_free(&mut frame);
 
