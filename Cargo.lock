@@ -1379,7 +1379,7 @@ dependencies = [
 [[package]]
 name = "egui-video"
 version = "0.8.0"
-source = "git+https://github.com/v0l/egui-video.git?rev=bb3f6b83ba3a0619b1b9de0d4da88acb7fafd257#bb3f6b83ba3a0619b1b9de0d4da88acb7fafd257"
+source = "git+https://github.com/v0l/egui-video.git?rev=5e2167855822f9523aaab0fe58ec8b3d510d1996#5e2167855822f9523aaab0fe58ec8b3d510d1996"
 dependencies = [
  "anyhow",
  "atomic",
@@ -1604,7 +1604,7 @@ dependencies = [
 [[package]]
 name = "ffmpeg-rs-raw"
 version = "0.1.0"
-source = "git+https://git.v0l.io/Kieran/ffmpeg-rs-raw.git?rev=8b6166f1db18ffb322a5a634d6b6deaddb79ecbf#8b6166f1db18ffb322a5a634d6b6deaddb79ecbf"
+source = "git+https://git.v0l.io/Kieran/ffmpeg-rs-raw.git?rev=90b98598e1fee6ddc52787c5c88924b52146b026#90b98598e1fee6ddc52787c5c88924b52146b026"
 dependencies = [
  "anyhow",
  "ffmpeg-sys-the-third",

@@ -1,13 +1,18 @@
 #!/bin/bash
 
-git clone https://github.com/v0l/ffmpeg-kit.git
-export ANDROID_SDK_ROOT=$ANDROID_HOME
+#git clone https://github.com/v0l/ffmpeg-kit.git
+#export ANDROID_SDK_ROOT=$ANDROID_HOME
 #cd ffmpeg-kit && ./android.sh \
 #  --disable-x86 \
 #  --disable-x86-64 \
 #  --disable-arm-v7a \
 #  --disable-arm-v7a-neon \
+#  --enable-gpl \
 #  --enable-openssl \
+#  --enable-x264 \
+#  --enable-libwebp \
+#  --enable-libpng \
+#  --enable-android-media-codec \
 #  --api-level=28 \
 #  --no-ffmpeg-kit-protocols \
 #  --no-archive
@@ -27,4 +32,4 @@ cp "$ANDROID_HOME/ndk/$NDK_VER/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr
 cp "$ANDROID_HOME/ndk/$NDK_VER/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/$TRIPLET/35/libcamera2ndk.so" \
   ./target/x/release/android/$ARCH/cargo/$TRIPLET/release/deps
 
-x build --arch $ARCH --platform $PLATFORM --verbose --release
+x build --arch $ARCH --platform $PLATFORM --format apk --verbose --release

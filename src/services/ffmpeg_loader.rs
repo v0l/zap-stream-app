@@ -13,7 +13,7 @@ impl FfmpegLoader {
     }
 
     pub fn load_image(&self, path: PathBuf) -> Result<ColorImage, Error> {
-        let demux = Demuxer::new(path.to_str().unwrap());
+        let demux = Demuxer::new(path.to_str().unwrap())?;
         Self::load_image_from_demuxer(demux)
     }
 
@@ -22,7 +22,7 @@ impl FfmpegLoader {
         key: &str,
         data: &'static [u8],
     ) -> Result<ColorImage, Error> {
-        let demux = Demuxer::new_custom_io(data, Some(key.to_string()));
+        let demux = Demuxer::new_custom_io(data, Some(key.to_string()))?;
         Self::load_image_from_demuxer(demux)
     }
 
@@ -45,8 +45,8 @@ impl FfmpegLoader {
             loop {
                 let (mut pkt, stream) = demuxer.get_packet()?;
                 if (*stream).index as usize == bv.index {
-                    let frames = decode.decode_pkt(pkt, stream)?;
-                    if let Some((frame, _)) = frames.first() {
+                    let frames = decode.decode_pkt(pkt)?;
+                    if let Some(frame) = frames.first() {
                         let mut frame = get_frame_from_hw(*frame)?;
                         let frame_rgb = scaler.process_frame(
                             frame,
