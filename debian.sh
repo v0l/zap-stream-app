@@ -13,9 +13,9 @@ apt install -y \
       libx264-dev \
       libwebp-dev \
       libssl-dev \
-      libalsaplayer-dev \
       libpipewire-0.3-dev \
       libpulse-dev \
-      libpng-dev
+      libpng-dev \
+      libasound2-dev
 cargo install xbuild
 x build --release
