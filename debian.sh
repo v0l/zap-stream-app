@@ -1,6 +1,6 @@
 #!/bin/bash
-sudo apt update
-sudo apt install -y \
+apt update
+apt install -y \
       build-essential \
       pkg-config \
       libavcodec-dev \
@@ -17,5 +17,5 @@ sudo apt install -y \
       libpipewire-0.3-dev \
       libpulse-dev \
       libpng-dev
-sudo cargo install xbuild
+cargo install xbuild
 x build --release
