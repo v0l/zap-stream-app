@@ -6,9 +6,9 @@ concurrency:
 metadata:
   namespace: git
 steps:
-  - name: build
+  - name: build_debian
     image: rust:bookworm
     commands:
+      - apt install -y build-essential libavcodec-dev libavformat-dev libavdevice-dev libavutil-dev libavfilter-dev libswresample-dev libswscale-dev libx264-dev libwebp-dev libssl-dev libalsaplayer-dev libpipewire-0.3-dev libpulse-dev
       - cargo install xbuild
       - x build --platform linux --arch x64
-      - x build --platform android --arch arm64 --format apk
