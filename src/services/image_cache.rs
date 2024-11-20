@@ -1,14 +1,14 @@
 use crate::services::ffmpeg_loader::FfmpegLoader;
 use crate::theme::NEUTRAL_800;
-use anyhow::Error;
+use anyhow::{Error, Result};
 use egui::{ColorImage, Context, Image, ImageData, TextureHandle, TextureOptions};
 use itertools::Itertools;
-use log::{error, info};
+use log::{info, warn};
 use lru::LruCache;
 use nostr_sdk::util::hex;
 use resvg::usvg::Transform;
 use sha2::{Digest, Sha256};
-use std::collections::HashSet;
+use std::collections::VecDeque;
 use std::fs;
 use std::num::NonZeroUsize;
 use std::path::PathBuf;
@@ -16,12 +16,15 @@ use std::sync::{Arc, Mutex};
 
 type ImageCacheStore = Arc<Mutex<LruCache<String, TextureHandle>>>;
 
+#[derive(PartialEq, Eq, Hash, Clone)]
+struct LoadRequest(String);
+
 pub struct ImageCache {
     ctx: Context,
     dir: PathBuf,
     placeholder: TextureHandle,
     cache: ImageCacheStore,
-    fetch_cache: Arc<Mutex<HashSet<String>>>,
+    fetch_queue: Arc<Mutex<VecDeque<LoadRequest>>>,
 }
 
 impl ImageCache {
@@ -34,24 +37,60 @@ impl ImageCache {
             ImageData::from(ColorImage::new([1, 1], NEUTRAL_800)),
             TextureOptions::default(),
         );
+        let cache = Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(1_000).unwrap())));
+        let fetch_queue = Arc::new(Mutex::new(VecDeque::<LoadRequest>::new()));
+        let cc = cache.clone();
+        let fq = fetch_queue.clone();
+        let out_dir = out.clone();
+        let ctx_clone = ctx.clone();
+        let placeholder_clone = placeholder.clone();
+        tokio::spawn(async move {
+            loop {
+                let next = fq.lock().unwrap().pop_front();
+                if let Some(next) = next {
+                    let path = Self::find(&out_dir, &next.0);
+                    if path.exists() {
+                        let th = Self::load_image_texture(&ctx_clone, path, &next.0)
+                            .unwrap_or(placeholder_clone.clone());
+                        cc.lock().unwrap().put(next.0, th);
+                        ctx_clone.request_repaint();
+                    } else {
+                        match Self::download_image_to_disk(&path, &next.0).await {
+                            Ok(()) => {
+                                let th = Self::load_image_texture(&ctx_clone, path, &next.0)
+                                    .unwrap_or(placeholder_clone.clone());
+                                cc.lock().unwrap().put(next.0, th);
+                                ctx_clone.request_repaint();
+                            }
+                            Err(e) => {
+                                warn!("Failed to download image {}: {}", next.0, e);
+                                cc.lock().unwrap().put(next.0, placeholder_clone.clone());
+                                ctx_clone.request_repaint();
+                            }
+                        }
+                    }
+                } else {
+                    tokio::time::sleep(std::time::Duration::from_millis(30)).await;
+                }
+            }
+        });
         Self {
             ctx,
             dir: out,
             placeholder,
-            cache: Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(1000).unwrap()))),
-            fetch_cache: Arc::new(Mutex::new(HashSet::new())),
+            cache,
+            fetch_queue,
         }
     }
 
-    pub fn find<U>(&self, url: U) -> PathBuf
+    pub fn find<U>(dir: &PathBuf, url: U) -> PathBuf
     where
         U: Into<String>,
     {
         let mut sha = Sha256::new();
         sha2::digest::Update::update(&mut sha, url.into().as_bytes());
         let hash = hex::encode(sha.finalize());
-        self.dir
-            .join(PathBuf::from(hash[0..2].to_string()))
+        dir.join(PathBuf::from(hash[0..2].to_string()))
             .join(PathBuf::from(hash))
     }
 
@@ -92,49 +131,28 @@ impl ImageCache {
                 return Image::from_texture(i);
             }
         }
-        let path = self.find(&u);
-        if !path.exists() && !u.is_empty() {
-            let path = path.clone();
-            let cache = self.cache.clone();
-            let ctx = self.ctx.clone();
-            let fetch_cache = self.fetch_cache.clone();
-            let placeholder = self.placeholder.clone();
-            tokio::spawn(async move {
-                if fetch_cache.lock().unwrap().insert(u.clone()) {
-                    info!("Fetching image: {}", &u);
-                    if let Ok(data) = reqwest::get(&u).await {
-                        tokio::fs::create_dir_all(path.parent().unwrap())
-                            .await
-                            .unwrap();
-                        let img_data = data.bytes().await.unwrap();
-                        if let Err(e) = tokio::fs::write(path.clone(), img_data).await {
-                            error!("Failed to write file: {}", e);
-                        }
-                        let t = Self::load_image(&ctx, path, &u)
-                            .await
-                            .unwrap_or(placeholder);
-                        cache.lock().unwrap().put(u.clone(), t);
-                        ctx.request_repaint();
-                    }
-                }
-            });
-        } else if path.exists() {
-            let path = path.clone();
-            let ctx = self.ctx.clone();
-            let cache = self.cache.clone();
-            let placeholder = self.placeholder.clone();
-            tokio::spawn(async move {
-                let t = Self::load_image(&ctx, path, &u)
-                    .await
-                    .unwrap_or(placeholder);
-                cache.lock().unwrap().put(u.clone(), t);
-                ctx.request_repaint();
-            });
+        if let Ok(mut ql) = self.fetch_queue.lock() {
+            let lr = LoadRequest(u.clone());
+            if !ql.contains(&lr) {
+                ql.push_back(lr);
+            }
         }
         Image::from_texture(&self.placeholder)
     }
 
-    async fn load_image(ctx: &Context, path: PathBuf, key: &str) -> Option<TextureHandle> {
+    /// Download an image to disk
+    async fn download_image_to_disk(dst: &PathBuf, u: &str) -> Result<()> {
+        info!("Fetching image: {}", &u);
+        tokio::fs::create_dir_all(dst.parent().unwrap()).await?;
+
+        let data = reqwest::get(u).await?;
+        let img_data = data.bytes().await?;
+        tokio::fs::write(dst, img_data).await?;
+        Ok(())
+    }
+
+    /// Load an image from disk into an egui texture handle
+    fn load_image_texture(ctx: &Context, path: PathBuf, key: &str) -> Option<TextureHandle> {
         let loader = FfmpegLoader::new();
         match loader.load_image(path) {
             Ok(i) => Some(ctx.load_texture(key, ImageData::from(i), TextureOptions::default())),

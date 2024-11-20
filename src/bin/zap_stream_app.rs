@@ -8,15 +8,11 @@ use std::ops::Deref;
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
 use zap_stream_app::app::{NativeLayerOps, ZapStreamApp};
-use zap_stream_app::av_log_redirect;
 
 #[tokio::main]
 async fn main() {
     pretty_env_logger::init();
 
-    unsafe {
-        egui_video::ffmpeg_sys_the_third::av_log_set_callback(Some(av_log_redirect));
-    }
     let mut options = eframe::NativeOptions::default();
     options.viewport = ViewportBuilder::default().with_inner_size(Vec2::new(1300., 900.));
 

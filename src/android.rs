@@ -1,5 +1,4 @@
 use crate::app::{NativeLayerOps, ZapStreamApp};
-use crate::av_log_redirect;
 use eframe::Renderer;
 use egui::{Margin, ViewportBuilder};
 use serde::de::DeserializeOwned;
@@ -13,9 +12,6 @@ pub fn start_android(app: AndroidApp) {
     android_logger::init_once(
         android_logger::Config::default().with_max_level(log::LevelFilter::Info),
     );
-    unsafe {
-        egui_video::ffmpeg_sys_the_third::av_log_set_callback(Some(av_log_redirect));
-    }
 
     let mut options = eframe::NativeOptions::default();
     options.renderer = Renderer::Glow;
