@@ -12,7 +12,6 @@
 #  --enable-x264 \
 #  --enable-libwebp \
 #  --enable-libpng \
-#  --enable-android-media-codec \
 #  --api-level=28 \
 #  --no-ffmpeg-kit-protocols \
 #  --no-archive

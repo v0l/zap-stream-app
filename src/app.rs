@@ -1,6 +1,7 @@
 use crate::route::Router;
+use eframe::epaint::FontFamily;
 use eframe::{App, CreationContext, Frame};
-use egui::{Color32, Context, Margin};
+use egui::{Color32, Context, FontData, FontDefinitions, Margin};
 use nostr_sdk::database::MemoryDatabase;
 use nostr_sdk::Client;
 use nostrdb::{Config, Ndb};
@@ -59,6 +60,15 @@ where
         ndb_config.set_ingester_threads(4);
 
         let ndb = Ndb::new(ndb_path.to_str().unwrap(), &ndb_config).unwrap();
+
+        let mut fd = FontDefinitions::default();
+        fd.font_data.insert(
+            "Outfit".to_string(),
+            FontData::from_static(include_bytes!("../assets/Outfit-Light.ttf")),
+        );
+        fd.families
+            .insert(FontFamily::Proportional, vec!["Outfit".to_string()]);
+        cc.egui_ctx.set_fonts(fd);
 
         let cfg = config.clone();
         Self {

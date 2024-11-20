@@ -73,7 +73,7 @@ impl Login {
 
     pub fn sign_event(&self, ev: UnsignedEvent) -> Result<Event, Error> {
         let secret = self.secret_key()?;
-        ev.sign(&secret).map_err(Error::new)
+        ev.sign_with_keys(&secret).map_err(Error::new)
     }
 
     pub fn write_live_chat_msg(&self, link: &NostrLink, msg: &str) -> Result<Event, Error> {

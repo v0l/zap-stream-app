@@ -39,6 +39,7 @@ impl NostrWidget for HomePage {
             .iter()
             .map(|n| services.ndb.get_note_by_key(services.tx, NoteKey::new(n.0)))
             .map_while(|f| f.ok())
+            .filter(|f| f.can_play())
             .collect();
 
         ScrollArea::vertical()

@@ -464,9 +464,9 @@ dependencies = [
 
 [[package]]
 name = "async-wsocket"
-version = "0.9.0"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c0984bead67f20366bc8dd46018dfbe189b67eeefb0e5b86b9eade18d7c3c3b"
+checksum = "a107e3bdbe61e8e1e1341c57241b4b2d50501127b44bd2eff13b4635ab42d35a"
 dependencies = [
  "async-utility",
  "futures",
@@ -1379,7 +1379,7 @@ dependencies = [
 [[package]]
 name = "egui-video"
 version = "0.8.0"
-source = "git+https://github.com/v0l/egui-video.git?rev=5e2167855822f9523aaab0fe58ec8b3d510d1996#5e2167855822f9523aaab0fe58ec8b3d510d1996"
+source = "git+https://github.com/v0l/egui-video.git?rev=7d93a672fcadb7f98883a1a46f3c7f6e902c89a6#7d93a672fcadb7f98883a1a46f3c7f6e902c89a6"
 dependencies = [
  "anyhow",
  "atomic",
@@ -1387,8 +1387,12 @@ dependencies = [
  "egui",
  "egui_inbox",
  "ffmpeg-rs-raw",
+ "itertools 0.13.0",
  "log",
+ "m3u8-rs",
  "nom",
+ "ureq",
+ "url",
 ]
 
 [[package]]
@@ -1604,7 +1608,7 @@ dependencies = [
 [[package]]
 name = "ffmpeg-rs-raw"
 version = "0.1.0"
-source = "git+https://git.v0l.io/Kieran/ffmpeg-rs-raw.git?rev=90b98598e1fee6ddc52787c5c88924b52146b026#90b98598e1fee6ddc52787c5c88924b52146b026"
+source = "git+https://git.v0l.io/Kieran/ffmpeg-rs-raw.git?rev=bb11e998e759b0332c22703844f448fb2ea3b4b5#bb11e998e759b0332c22703844f448fb2ea3b4b5"
 dependencies = [
  "anyhow",
  "ffmpeg-sys-the-third",
@@ -1615,8 +1619,8 @@ dependencies = [
 
 [[package]]
 name = "ffmpeg-sys-the-third"
-version = "2.0.0+ffmpeg-7.0"
-source = "git+https://github.com/shssoichiro/ffmpeg-the-third.git?branch=master#fd44dd339be4971c0e32787b42514883ca934997"
+version = "2.1.0+ffmpeg-7.1"
+source = "git+https://git.v0l.io/ffmpeg/ffmpeg-the-third.git?branch=master#0fdfa9ab506f5c92aad5a175db081c8a2c1579a1"
 dependencies = [
  "bindgen 0.69.5",
  "cc",
@@ -2515,6 +2519,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "m3u8-rs"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f03cd3335fb5f2447755d45cda9c70f76013626a9db44374973791b0926a86c3"
+dependencies = [
+ "chrono",
+ "nom",
+]
+
+[[package]]
 name = "mach2"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2722,11 +2736,12 @@ dependencies = [
 
 [[package]]
 name = "nostr"
-version = "0.35.0"
+version = "0.36.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "56db234b2e07901e372f34e9463f91590579cd8e6dbd34ed2ccc7e461e4ba639"
+checksum = "14ad56c1d9a59f4edc46b17bc64a217b38b99baefddc0080f85ad98a0855336d"
 dependencies = [
  "aes",
+ "async-trait",
  "base64",
  "bech32",
  "bip39",
@@ -2753,9 +2768,9 @@ dependencies = [
 
 [[package]]
 name = "nostr-database"
-version = "0.35.0"
+version = "0.36.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50de8cc5e77e7dafa7e2e0d0d67187ef19e191dcd1a68efffd3e05152d91b3c3"
+checksum = "1859abebf78d7d9e945b20c8faaf710c9db905adeb148035b803ae45792dbebe"
 dependencies = [
  "async-trait",
  "lru",
@@ -2767,9 +2782,9 @@ dependencies = [
 
 [[package]]
 name = "nostr-relay-pool"
-version = "0.35.0"
+version = "0.36.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "800b9ca169902977366f8243ec645b1fa4a128ab621331796d4a26bd7bc22a88"
+checksum = "e39cfcb30cab86b30ca9acba89f5ccb25a4142a5dc5fcfbf3edf34b204ddd7c7"
 dependencies = [
  "async-utility",
  "async-wsocket",
@@ -2786,9 +2801,9 @@ dependencies = [
 
 [[package]]
 name = "nostr-sdk"
-version = "0.35.0"
+version = "0.36.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d93036bf4c1e35145ca2cd6ee4cb7bb9c74f41cbca9cc4caff1e87b5e192f253"
+checksum = "e4739ed15ff81a0e474d79b38c3eb481ff5f968c1865f38ba46852daf6f6495e"
 dependencies = [
  "async-utility",
  "atomic-destructor",
@@ -2796,7 +2811,6 @@ dependencies = [
  "nostr",
  "nostr-database",
  "nostr-relay-pool",
- "nostr-signer",
  "nostr-zapper",
  "nwc",
  "thiserror",
@@ -2805,24 +2819,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "nostr-signer"
-version = "0.35.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1e132975a677a1c97a7695ef1161291dc06517a588b6e17e3aa05d3fb4056a0"
-dependencies = [
- "async-utility",
- "nostr",
- "nostr-relay-pool",
- "thiserror",
- "tokio",
- "tracing",
-]
-
-[[package]]
 name = "nostr-zapper"
-version = "0.35.0"
+version = "0.36.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b60e7a3ecc9881ca418e772a6fc4410920653a9f0bf9457b6ddd732d2a3f64f1"
+checksum = "9d9709ecf8050bbe4ecf0e5efda2f25b690bb1761fc504e05654621ba9e568a8"
 dependencies = [
  "async-trait",
  "nostr",
@@ -2832,7 +2832,7 @@ dependencies = [
 [[package]]
 name = "nostrdb"
 version = "0.3.4"
-source = "git+https://github.com/damus-io/nostrdb-rs?branch=master#9bbafd8a2e904b77a51e7cfca71eb5bb5650e829"
+source = "git+https://github.com/damus-io/nostrdb-rs?rev=9bbafd8a2e904b77a51e7cfca71eb5bb5650e829#9bbafd8a2e904b77a51e7cfca71eb5bb5650e829"
 dependencies = [
  "bindgen 0.69.5",
  "cc",
@@ -2902,10 +2902,11 @@ dependencies = [
 
 [[package]]
 name = "nwc"
-version = "0.35.0"
+version = "0.36.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e962f52732a6d91c1e76d4de3f1daa186e77a849e98e5abe53ca7fe9796d04e"
+checksum = "1b5f98bcaf232b3ec48e018792ca7bc2b90e7520d001a07b8218a9e76a03fda2"
 dependencies = [
+ "async-trait",
  "async-utility",
  "nostr",
  "nostr-relay-pool",
@@ -3730,6 +3731,7 @@ version = "0.23.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5fbb44d7acc4e873d613422379f69f237a1b141928c02f6bc6ccfddddc2d7993"
 dependencies = [
+ "log",
  "once_cell",
  "ring",
  "rustls-pki-types",
@@ -4611,6 +4613,22 @@ name = "untrusted"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
+
+[[package]]
+name = "ureq"
+version = "2.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b74fc6b57825be3373f7054754755f03ac3a8f5d70015ccad699ba2029956f4a"
+dependencies = [
+ "base64",
+ "flate2",
+ "log",
+ "once_cell",
+ "rustls",
+ "rustls-pki-types",
+ "url",
+ "webpki-roots",
+]
 
 [[package]]
 name = "url"

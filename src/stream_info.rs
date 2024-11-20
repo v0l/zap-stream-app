@@ -27,6 +27,8 @@ pub trait StreamInfo {
     fn host(&self) -> &[u8; 32];
 
     fn stream(&self) -> Option<&str>;
+    /// Is the stream playable by this app
+    fn can_play(&self) -> bool;
 
     fn starts(&self) -> u64;
 
@@ -71,6 +73,15 @@ impl<'a> StreamInfo for Note<'a> {
             s.variant().str()
         } else {
             None
+        }
+    }
+
+    /// Is the stream playable by this app
+    fn can_play(&self) -> bool {
+        if let Some(stream) = self.stream() {
+            stream.contains(".m3u8")
+        } else {
+            false
         }
     }
 
