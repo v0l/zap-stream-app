@@ -9,7 +9,7 @@ steps:
   - name: build_debian
     image: rust:bookworm
     commands:
-      - apt update && apt install -y build-essential pkg-config libavcodec-dev libavformat-dev libavdevice-dev libavutil-dev libavfilter-dev libswresample-dev libswscale-dev libx264-dev libwebp-dev libssl-dev libalsaplayer-dev libpipewire-0.3-dev libpulse-dev libpng-dev libfdk-aac-dev
+      - apt update && apt install -y build-essential pkg-config libavcodec-dev libavformat-dev libavdevice-dev libavutil-dev libavfilter-dev libswresample-dev libswscale-dev libx264-dev libwebp-dev libssl-dev libalsaplayer-dev libpipewire-0.3-dev libpulse-dev libpng-dev
       - ldconfig
       - cargo install xbuild
       - x build --platform linux --arch x64
