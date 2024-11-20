@@ -1,0 +1,14 @@
+kind: pipeline
+type: kubernetes
+name: default
+concurrency:
+  limit: 1
+metadata:
+  namespace: git
+steps:
+  - name: build
+    image: rust:bookwork
+    commands:
+      - cargo install xbuild
+      - x build --platform linux --arch x64
+      - x build --platform android --arch arm64 --format apk

@@ -9,7 +9,6 @@ pub struct StreamPlayer {
 impl StreamPlayer {
     pub fn new(ctx: &Context, url: &String) -> Self {
         let mut p = Player::new(ctx, url);
-        p.set_debug(true);
         p.start();
         Self { player: Some(p) }
     }
