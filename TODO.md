@@ -1,3 +1,4 @@
 - [Login] Proper key storage
 - [NDB] Handle PRE's
 - [UX] Render non-ascii chars with better font
+- [egui-video] Handle mobile DPI for video player

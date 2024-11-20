@@ -7,7 +7,7 @@ metadata:
   namespace: git
 steps:
   - name: build
-    image: rust:bookwork
+    image: rust:bookworm
     commands:
       - cargo install xbuild
       - x build --platform linux --arch x64
