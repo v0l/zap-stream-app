@@ -1379,7 +1379,7 @@ dependencies = [
 [[package]]
 name = "egui-video"
 version = "0.8.0"
-source = "git+https://github.com/v0l/egui-video.git?rev=f3753a50bbd2ac1f5e324b3d3768a0b173dfbd2e#f3753a50bbd2ac1f5e324b3d3768a0b173dfbd2e"
+source = "git+https://github.com/v0l/egui-video.git?rev=d2ea3b4db21eb870a207db19e4cd21c7d1d24836#d2ea3b4db21eb870a207db19e4cd21c7d1d24836"
 dependencies = [
  "anyhow",
  "atomic",

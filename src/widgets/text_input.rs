@@ -32,8 +32,9 @@ impl<'a> NativeTextInput<'a> {
 
 impl<'a> NostrWidget for NativeTextInput<'a> {
     fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_>) -> Response {
-        let mut editor = TextEdit::singleline(self.text)
+        let mut editor = TextEdit::multiline(self.text)
             .frame(false)
+            .desired_rows(1)
             .desired_width(f32::INFINITY);
         if let Some(hint_text) = self.hint_text {
             editor = editor.hint_text(egui::RichText::new(hint_text).color(NEUTRAL_500));

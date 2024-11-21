@@ -35,9 +35,9 @@ impl NostrWidget for WriteChat {
                         .load_bytes("send-03.svg", logo_bytes)
                         .sense(Sense::click())
                         .ui(ui)
-                        .clicked()
+                        .clicked() || self.msg.ends_with('\n')
                     {
-                        if let Ok(ev) = services.login.write_live_chat_msg(&self.link, &self.msg) {
+                        if let Ok(ev) = services.login.write_live_chat_msg(&self.link, &self.msg.trim()) {
                             info!("Sending: {:?}", ev);
                             services.broadcast_event(ev);
                         }
@@ -46,7 +46,7 @@ impl NostrWidget for WriteChat {
 
                     let mut editor =
                         NativeTextInput::new(&mut self.msg).with_hint_text("Message..");
-                    editor.render(ui, services);
+                    editor.render(ui, services)
                 });
             })
             .response
