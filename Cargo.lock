@@ -1379,7 +1379,7 @@ dependencies = [
 [[package]]
 name = "egui-video"
 version = "0.8.0"
-source = "git+https://github.com/v0l/egui-video.git?rev=7d93a672fcadb7f98883a1a46f3c7f6e902c89a6#7d93a672fcadb7f98883a1a46f3c7f6e902c89a6"
+source = "git+https://github.com/v0l/egui-video.git?rev=f3753a50bbd2ac1f5e324b3d3768a0b173dfbd2e#f3753a50bbd2ac1f5e324b3d3768a0b173dfbd2e"
 dependencies = [
  "anyhow",
  "atomic",
@@ -1608,7 +1608,7 @@ dependencies = [
 [[package]]
 name = "ffmpeg-rs-raw"
 version = "0.1.0"
-source = "git+https://git.v0l.io/Kieran/ffmpeg-rs-raw.git?rev=bb11e998e759b0332c22703844f448fb2ea3b4b5#bb11e998e759b0332c22703844f448fb2ea3b4b5"
+source = "git+https://git.v0l.io/Kieran/ffmpeg-rs-raw.git?rev=a2c0e3374ba5130588adcbeda18439b69bb2cb12#a2c0e3374ba5130588adcbeda18439b69bb2cb12"
 dependencies = [
  "anyhow",
  "ffmpeg-sys-the-third",
@@ -1620,7 +1620,7 @@ dependencies = [
 [[package]]
 name = "ffmpeg-sys-the-third"
 version = "2.1.0+ffmpeg-7.1"
-source = "git+https://git.v0l.io/ffmpeg/ffmpeg-the-third.git?branch=master#0fdfa9ab506f5c92aad5a175db081c8a2c1579a1"
+source = "git+https://git.v0l.io/Kieran/ffmpeg-the-third.git?rev=e5f8e077b04b10d5887bce4df1eb1a71738a6c66#e5f8e077b04b10d5887bce4df1eb1a71738a6c66"
 dependencies = [
  "bindgen 0.69.5",
  "cc",

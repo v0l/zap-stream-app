@@ -28,7 +28,7 @@ resvg = { version = "0.44.0", default-features = false }
 serde = { version = "1.0.214", features = ["derive"] }
 serde_with = { version = "3.11.0", features = ["hex"] }
 
-egui-video = { git = "https://github.com/v0l/egui-video.git", rev = "7d93a672fcadb7f98883a1a46f3c7f6e902c89a6" }
+egui-video = { git = "https://github.com/v0l/egui-video.git", rev = "f3753a50bbd2ac1f5e324b3d3768a0b173dfbd2e" }
 #egui-video = { path = "../egui-video" }
 
 [target.'cfg(not(target_os = "android"))'.dependencies]
