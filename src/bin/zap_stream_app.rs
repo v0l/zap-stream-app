@@ -1,4 +1,7 @@
+use anyhow::Result;
+use directories::ProjectDirs;
 use egui::{Margin, Vec2, ViewportBuilder};
+use log::error;
 use nostr_sdk::serde_json;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -10,19 +13,26 @@ use std::sync::{Arc, RwLock};
 use zap_stream_app::app::{NativeLayerOps, ZapStreamApp};
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()> {
     pretty_env_logger::init();
 
     let mut options = eframe::NativeOptions::default();
     options.viewport = ViewportBuilder::default().with_inner_size(Vec2::new(1300., 900.));
 
-    let data_path = PathBuf::from("./.data");
+    let data_path = ProjectDirs::from("stream", "zap", "app")
+        .unwrap()
+        .config_dir()
+        .to_path_buf();
+
     let config = DesktopApp::new(data_path.clone());
-    let _res = eframe::run_native(
+    if let Err(e) = eframe::run_native(
         "zap.stream",
         options,
         Box::new(move |cc| Ok(Box::new(ZapStreamApp::new(cc, data_path, config)))),
-    );
+    ) {
+        error!("{}", e);
+    }
+    Ok(())
 }
 
 #[derive(Clone)]
