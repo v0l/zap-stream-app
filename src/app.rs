@@ -2,10 +2,10 @@ use crate::route::Router;
 use eframe::epaint::FontFamily;
 use eframe::{App, CreationContext, Frame};
 use egui::{Color32, Context, FontData, FontDefinitions, Margin};
-use nostr_sdk::database::MemoryDatabase;
 use nostr_sdk::Client;
 use nostrdb::{Config, Ndb};
 use std::path::PathBuf;
+use nostr_sdk::prelude::MemoryDatabase;
 
 pub struct ZapStreamApp<T: NativeLayerOps> {
     client: Client,

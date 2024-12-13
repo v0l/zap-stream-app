@@ -81,8 +81,9 @@ impl Login {
             return Err(anyhow::anyhow!("Empty message"));
         }
         let secret = self.secret_key()?;
-        EventBuilder::new(Kind::LiveEventMessage, msg, [Tag::parse(&link.to_tag())?])
-            .to_event(&secret)
+        EventBuilder::new(Kind::LiveEventMessage, msg)
+            .tag(Tag::parse(&link.to_tag())?)
+            .sign_with_keys(&secret)
             .map_err(Error::new)
     }
 }

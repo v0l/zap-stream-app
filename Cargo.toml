@@ -9,8 +9,8 @@ crate-type = ["lib", "cdylib"]
 [dependencies]
 tokio = { version = "1.40.0", features = ["fs", "rt-multi-thread", "rt"] }
 egui = { version = "0.29.1", default-features = false, features = [] }
-nostrdb = { git = "https://github.com/damus-io/nostrdb-rs", rev = "9bbafd8a2e904b77a51e7cfca71eb5bb5650e829" }
-nostr-sdk = { version = "0.36.0", features = ["all-nips"] }
+nostrdb = { git = "https://github.com/damus-io/nostrdb-rs", rev = "3deb94aef3f436469158c4424650d81be26f9315" }
+nostr-sdk = { version = "0.37", features = ["all-nips"] }
 log = "0.4.22"
 pretty_env_logger = "0.5.0"
 egui_inbox = "0.6.0"
