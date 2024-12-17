@@ -1,11 +1,12 @@
 use crate::route::Router;
 use eframe::epaint::FontFamily;
-use eframe::{App, CreationContext, Frame};
-use egui::{Color32, Context, FontData, FontDefinitions, Margin};
+use eframe::CreationContext;
+use egui::{Color32, FontData, FontDefinitions, Margin};
+use nostr_sdk::prelude::MemoryDatabase;
 use nostr_sdk::Client;
 use nostrdb::{Config, Ndb};
+use notedeck::AppContext;
 use std::path::PathBuf;
-use nostr_sdk::prelude::MemoryDatabase;
 
 pub struct ZapStreamApp<T: NativeLayerOps> {
     client: Client,
@@ -85,6 +86,7 @@ where
     }
 }
 
+#[cfg(not(feature = "notedeck"))]
 impl<T> App for ZapStreamApp<T>
 where
     T: NativeLayerOps,
@@ -101,6 +103,29 @@ where
         egui::CentralPanel::default()
             .frame(app_frame)
             .show(ctx, |ui| {
+                ui.visuals_mut().override_text_color = Some(Color32::WHITE);
+                self.router.show(ui);
+            });
+    }
+}
+
+#[cfg(feature = "notedeck")]
+impl<T> notedeck::App for ZapStreamApp<T>
+where
+    T: NativeLayerOps,
+{
+    fn update(&mut self, ctx: &mut AppContext<'_>) {
+        let mut app_frame = egui::containers::Frame::default();
+        let margin = self.native_layer.frame_margin();
+
+        app_frame.inner_margin = margin;
+        app_frame.stroke.color = Color32::BLACK;
+
+        //ctx.set_debug_on_hover(true);
+
+        egui::CentralPanel::default()
+            .frame(app_frame)
+            .show(ctx.egui, |ui| {
                 ui.visuals_mut().override_text_color = Some(Color32::WHITE);
                 self.router.show(ui);
             });

@@ -1,5 +1,6 @@
 use anyhow::Result;
 use directories::ProjectDirs;
+use eframe::Renderer;
 use egui::{Margin, Vec2, ViewportBuilder};
 use log::error;
 use nostr_sdk::serde_json;
@@ -18,6 +19,7 @@ async fn main() -> Result<()> {
 
     let mut options = eframe::NativeOptions::default();
     options.viewport = ViewportBuilder::default().with_inner_size(Vec2::new(1300., 900.));
+    options.renderer = Renderer::Glow;
 
     let data_path = ProjectDirs::from("stream", "zap", "app")
         .unwrap()
@@ -25,11 +27,26 @@ async fn main() -> Result<()> {
         .to_path_buf();
 
     let config = DesktopApp::new(data_path.clone());
+    #[cfg(feature = "notedeck")]
     if let Err(e) = eframe::run_native(
         "zap.stream",
         options,
-        Box::new(move |cc| Ok(Box::new(ZapStreamApp::new(cc, data_path, config)))),
+        Box::new(move |cc| {
+            let args: Vec<String> = std::env::args().collect();
+            let mut notedeck =
+                notedeck_chrome::Notedeck::new(&cc.egui_ctx, data_path.clone(), &args);
+
+            let app = ZapStreamApp::new(cc, data_path, config);
+            notedeck.add_app(app);
+
+            Ok(Box::new(notedeck))
+        }),
     ) {
+        error!("{}", e);
+    }
+
+    #[cfg(not(feature = "notedeck"))]
+    if let Err(e) = eframe::run_native("zap.stream", options, Box::new(move |cc| Ok(Box::new()))) {
         error!("{}", e);
     }
     Ok(())
