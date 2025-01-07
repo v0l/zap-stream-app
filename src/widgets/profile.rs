@@ -1,46 +1,31 @@
 use crate::route::RouteServices;
-use crate::services::image_cache::ImageCache;
-use crate::services::ndb_wrapper::SubWrapper;
 use crate::theme::FONT_SIZE;
-use crate::widgets::{Avatar, Username};
-use egui::{Response, Ui, Widget};
-use nostrdb::NdbProfile;
+use crate::widgets::{Avatar, NostrWidget, Username};
+use egui::{Response, Ui};
 
 pub struct Profile<'a> {
     size: f32,
     pubkey: &'a [u8; 32],
-    profile: Option<NdbProfile<'a>>,
-    sub: Option<SubWrapper>,
-    img_cache: &'a ImageCache,
-    services: &'a RouteServices<'a>,
 }
 
 impl<'a> Profile<'a> {
-    pub fn new(pubkey: &'a [u8; 32], services: &'a RouteServices<'a>) -> Self {
-        let (p, sub) = services.ndb.fetch_profile(services.tx, pubkey);
-
-        Self {
-            pubkey,
-            size: 40.,
-            profile: p,
-            img_cache: services.img_cache,
-            sub,
-            services,
-        }
+    pub fn new(pubkey: &'a [u8; 32]) -> Self {
+        Self { pubkey, size: 40. }
     }
 
     pub fn size(self, size: f32) -> Self {
         Self { size, ..self }
     }
-}
 
-impl<'a> Widget for Profile<'a> {
-    fn ui(self, ui: &mut Ui) -> Response {
+    pub fn render(self, ui: &mut Ui, services: &mut RouteServices<'_, '_>) -> Response {
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 8.;
 
-            ui.add(Avatar::from_profile(&self.profile, self.services).size(self.size));
-            ui.add(Username::new(&self.profile, FONT_SIZE))
+            let profile = services.profile(self.pubkey);
+            Avatar::from_profile(&profile)
+                .size(self.size)
+                .render(ui, services.ctx.img_cache);
+            ui.add(Username::new(&profile, FONT_SIZE))
         })
         .response
     }

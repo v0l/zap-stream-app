@@ -5,6 +5,8 @@ use crate::widgets::{NativeTextInput, NostrWidget};
 use eframe::emath::Align;
 use egui::{Frame, Layout, Response, Sense, Ui, Widget};
 use log::info;
+use nostrdb::Filter;
+use notedeck::AppContext;
 
 pub struct WriteChat {
     link: NostrLink,
@@ -21,7 +23,7 @@ impl WriteChat {
 }
 
 impl NostrWidget for WriteChat {
-    fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_>) -> Response {
+    fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_, '_>) -> Response {
         let logo_bytes = include_bytes!("../resources/send-03.svg");
         Frame::none()
             .inner_margin(MARGIN_DEFAULT)
@@ -31,16 +33,13 @@ impl NostrWidget for WriteChat {
             .show(ui, |ui| {
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                     if services
-                        .img_cache
-                        .load_bytes("send-03.svg", logo_bytes)
+                        .image_bytes("send-03.svg", logo_bytes)
                         .sense(Sense::click())
                         .ui(ui)
                         .clicked()
                         || self.msg.ends_with('\n')
                     {
-                        if let Ok(ev) = services
-                            .login
-                            .write_live_chat_msg(&self.link, &self.msg.trim())
+                        if let Some(ev) = services.write_live_chat_msg(&self.link, &self.msg.trim())
                         {
                             info!("Sending: {:?}", ev);
                             services.broadcast_event(ev);
@@ -48,11 +47,13 @@ impl NostrWidget for WriteChat {
                         self.msg.clear();
                     }
 
-                    let mut editor =
-                        NativeTextInput::new(&mut self.msg).with_hint_text("Message..");
-                    editor.render(ui, services)
+                    ui.add(NativeTextInput::new(&mut self.msg).with_hint_text("Message.."));
                 });
             })
             .response
+    }
+
+    fn update(&mut self, _services: &mut RouteServices<'_, '_>) -> anyhow::Result<()> {
+        Ok(())
     }
 }

@@ -1,34 +1,43 @@
-use crate::app::NativeLayerOps;
 use crate::link::NostrLink;
-use crate::login::Login;
-use crate::note_util::OwnedNote;
 use crate::route::home::HomePage;
 use crate::route::login::LoginPage;
 use crate::route::stream::StreamPage;
-use crate::services::image_cache::ImageCache;
-use crate::services::ndb_wrapper::NDBWrapper;
-use crate::widgets::{Header, NostrWidget};
-use egui::{Context, Response, Ui};
-use egui_inbox::{UiInbox, UiInboxSender};
+use crate::services::ffmpeg_loader::FfmpegLoader;
+use crate::widgets::{Header, NostrWidget, PlaceholderRect};
+use anyhow::{bail, Result};
+use egui::{Context, Image, Response, TextureHandle, Ui};
+use egui_inbox::{RequestRepaintTrait, UiInbox, UiInboxSender};
+use enostr::{EventClientMessage, Note};
+use itertools::Itertools;
 use log::{info, warn};
-use nostr_sdk::{Client, Event, JsonUtil};
-use nostrdb::{Ndb, Transaction};
-use std::path::PathBuf;
+use nostr::{ClientMessage, Event, EventBuilder, JsonUtil, Kind, Tag};
+use nostrdb::{Ndb, NdbProfile, NoteKey, Transaction};
+use notedeck::{AppContext, ImageCache};
+use poll_promise::Promise;
+use std::path::{Path, PathBuf};
+use std::sync::mpsc;
 
 mod home;
 mod login;
 mod stream;
 
+pub mod page {
+    use crate::route::{home, login, stream};
+    pub use home::HomePage;
+    pub use login::LoginPage;
+    pub use stream::StreamPage;
+}
+
 #[derive(PartialEq)]
-pub enum Routes {
+pub enum RouteType {
     HomePage,
     EventPage {
         link: NostrLink,
-        event: Option<OwnedNote>,
+        event: Option<NoteKey>,
     },
     ProfilePage {
         link: NostrLink,
-        profile: Option<OwnedNote>,
+        profile: Option<NoteKey>,
     },
     LoginPage,
 
@@ -37,156 +46,129 @@ pub enum Routes {
 }
 
 #[derive(PartialEq)]
-pub enum RouteAction {
-    ShowKeyboard,
-    HideKeyboard,
+pub enum RouteAction {}
+
+pub struct RouteServices<'a, 'ctx> {
+    pub router: mpsc::Sender<RouteType>,
+    pub tx: Transaction,
+    pub egui: Context,
+    pub ctx: &'a mut AppContext<'ctx>,
 }
 
-pub struct Router<T: NativeLayerOps> {
-    current: Routes,
-    current_widget: Option<Box<dyn NostrWidget>>,
-    router: UiInbox<Routes>,
-
-    ctx: Context,
-    ndb: NDBWrapper,
-    login: Login,
-    client: Client,
-    image_cache: ImageCache,
-    native_layer: T,
-}
-
-impl<T: NativeLayerOps> Drop for Router<T> {
-    fn drop(&mut self) {
-        self.login.save(&mut self.native_layer)
-    }
-}
-
-impl<T: NativeLayerOps> Router<T> {
-    pub fn new(
-        data_path: PathBuf,
-        ctx: Context,
-        client: Client,
-        ndb: Ndb,
-        native_layer: T,
-    ) -> Self {
-        let mut login = Login::new();
-        login.load(&native_layer);
-
-        Self {
-            current: Routes::HomePage,
-            current_widget: None,
-            router: UiInbox::new(),
-            ctx: ctx.clone(),
-            ndb: NDBWrapper::new(ctx.clone(), ndb.clone(), client.clone()),
-            client,
-            login,
-            image_cache: ImageCache::new(data_path, ctx.clone()),
-            native_layer,
-        }
-    }
-
-    fn load_widget(&mut self, route: Routes, tx: &Transaction) {
-        match &route {
-            Routes::HomePage => {
-                let w = HomePage::new(&self.ndb, tx);
-                self.current_widget = Some(Box::new(w));
-            }
-            Routes::EventPage { link, .. } => {
-                let w = StreamPage::new_from_link(&self.ndb, tx, link.clone());
-                self.current_widget = Some(Box::new(w));
-            }
-            Routes::LoginPage => {
-                let w = LoginPage::new();
-                self.current_widget = Some(Box::new(w));
-            }
-            _ => warn!("Not implemented"),
-        }
-        self.current = route;
-    }
-
-    pub fn show(&mut self, ui: &mut Ui) -> Response {
-        let tx = self.ndb.start_transaction();
-
-        // handle app state changes
-        let q = self.router.read(ui);
-        for r in q {
-            if let Routes::Action(a) = r {
-                match a {
-                    RouteAction::ShowKeyboard => self.native_layer.show_keyboard(),
-                    RouteAction::HideKeyboard => self.native_layer.hide_keyboard(),
-                    _ => info!("Not implemented"),
-                }
-            } else {
-                self.load_widget(r, &tx);
-            }
-        }
-
-        // load homepage on start
-        if self.current_widget.is_none() {
-            self.load_widget(Routes::HomePage, &tx);
-        }
-
-        let mut svc = RouteServices {
-            context: self.ctx.clone(),
-            router: self.router.sender(),
-            client: self.client.clone(),
-            ndb: &self.ndb,
-            tx: &tx,
-            login: &mut self.login,
-            img_cache: &self.image_cache,
-        };
-
-        // display app
-        ui.vertical(|ui| {
-            Header::new().render(ui, &mut svc);
-            if let Some(w) = self.current_widget.as_mut() {
-                w.render(ui, &mut svc)
-            } else {
-                ui.label("No widget")
-            }
-        })
-        .response
-    }
-}
-
-pub struct RouteServices<'a> {
-    pub context: Context,              //cloned
-    pub router: UiInboxSender<Routes>, //cloned
-    pub client: Client,
-
-    pub ndb: &'a NDBWrapper,       //ref
-    pub tx: &'a Transaction,       //ref
-    pub login: &'a mut Login,      //ref
-    pub img_cache: &'a ImageCache, //ref
-}
-
-impl<'a> RouteServices<'a> {
-    pub fn navigate(&self, route: Routes) {
-        if let Err(e) = self.router.send(route) {
-            warn!("Failed to navigate");
-        }
+impl<'a, 'ctx> RouteServices<'a, 'ctx> {
+    pub fn navigate(&self, route: RouteType) {
+        self.router.send(route).expect("route send failed");
+        self.egui.request_repaint();
     }
 
     pub fn action(&self, route: RouteAction) {
-        if let Err(e) = self.router.send(Routes::Action(route)) {
-            warn!("Failed to navigate");
-        }
+        self.router
+            .send(RouteType::Action(route))
+            .expect("route send failed");
+        self.egui.request_repaint();
     }
 
-    pub fn broadcast_event(&self, event: Event) {
-        let client = self.client.clone();
-
+    pub fn broadcast_event(&mut self, event: Event) {
         let ev_json = event.as_json();
-        if let Err(e) = self.ndb.submit_event(&ev_json) {
+        if let Err(e) = self.ctx.ndb.process_event(&ev_json) {
             warn!("Failed to submit event {}", e);
         }
-        tokio::spawn(async move {
-            match client.send_event(event).await {
-                Ok(e) => {
-                    info!("Broadcast event: {:?}", e)
-                }
-                Err(e) => warn!("Failed to broadcast event: {:?}", e),
-            }
-        });
+        self.ctx
+            .pool
+            .send(&enostr::ClientMessage::Event(EventClientMessage {
+                note_json: ev_json,
+            }));
     }
+
+    /// Load/Fetch profiles
+    pub fn profile(&self, pk: &[u8; 32]) -> Option<NdbProfile<'a>> {
+        // TODO
+        None
+    }
+
+    /// Load image from URL
+    pub fn image<'img, 'b>(&'b mut self, url: &'b str) -> Image<'img> {
+        image_from_cache(self.ctx.img_cache, &self.egui, url)
+    }
+
+    /// Load image from bytes
+    pub fn image_bytes(&self, name: &'static str, data: &'static [u8]) -> Image<'_> {
+        // TODO: loader
+        Image::from_bytes(name, data)
+    }
+
+    pub fn write_live_chat_msg(&self, link: &NostrLink, msg: &str) -> Option<Event> {
+        if msg.len() == 0 {
+            return None;
+        }
+        if let Some(acc) = self.ctx.accounts.get_selected_account() {
+            if let Some(key) = &acc.secret_key {
+                let nostr_key =
+                    nostr::Keys::new(nostr::SecretKey::from_slice(key.as_secret_bytes()).unwrap());
+                return Some(
+                    EventBuilder::new(Kind::LiveEventMessage, msg)
+                        .tag(Tag::parse(&link.to_tag()).unwrap())
+                        .sign_with_keys(&nostr_key)
+                        .ok()?,
+                );
+            }
+        }
+        None
+    }
+}
+
+pub fn image_from_cache<'a>(img_cache: &mut ImageCache, ctx: &Context, url: &str) -> Image<'a> {
+    let m_cached_promise = img_cache.map().get(url);
+    if m_cached_promise.is_none() {
+        let fetch = fetch_img(img_cache, ctx, url);
+        img_cache.map_mut().insert(url.to_string(), fetch);
+    }
+    Image::new(url.to_string())
+}
+
+fn fetch_img(
+    img_cache: &ImageCache,
+    ctx: &Context,
+    url: &str,
+) -> Promise<notedeck::Result<TextureHandle>> {
+    let k = ImageCache::key(url);
+    let dst_path = img_cache.cache_dir.join(k);
+    if dst_path.exists() {
+        let ctx = ctx.clone();
+        let url = url.to_owned();
+        let dst_path = dst_path.clone();
+        Promise::spawn_async(async move {
+            match FfmpegLoader::new().load_image(dst_path) {
+                Ok(img) => Ok(ctx.load_texture(&url, img, Default::default())),
+                Err(e) => Err(notedeck::Error::Generic(e.to_string())),
+            }
+        })
+    } else {
+        fetch_img_from_net(&dst_path, ctx, url)
+    }
+}
+
+fn fetch_img_from_net(
+    cache_path: &Path,
+    ctx: &Context,
+    url: &str,
+) -> Promise<notedeck::Result<TextureHandle>> {
+    let (sender, promise) = Promise::new();
+    let request = ehttp::Request::get(url);
+    let ctx = ctx.clone();
+    let cloned_url = url.to_owned();
+    let cache_path = cache_path.to_owned();
+    ehttp::fetch(request, move |response| {
+        let handle = response.map_err(notedeck::Error::Generic).map(|img| {
+            std::fs::write(&cache_path, &img.bytes).unwrap();
+            let img_loaded = FfmpegLoader::new().load_image(cache_path).unwrap();
+
+            ctx.load_texture(&cloned_url, img_loaded, Default::default())
+        });
+
+        sender.send(handle);
+        ctx.request_repaint();
+    });
+
+    promise
 }

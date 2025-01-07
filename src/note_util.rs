@@ -1,4 +1,4 @@
-use nostr_sdk::util::hex;
+use nostr::prelude::hex;
 use nostrdb::{NdbStr, Note, Tag};
 
 pub trait NoteUtil {
@@ -64,6 +64,3 @@ impl<'a> Iterator for TagIterBorrow<'a> {
         }
     }
 }
-
-#[derive(Eq, PartialEq)]
-pub struct OwnedNote(pub u64);

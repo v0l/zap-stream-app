@@ -1,34 +1,34 @@
 use crate::link::NostrLink;
-use crate::route::{RouteServices, Routes};
+use crate::route::{RouteServices, RouteType};
 use crate::stream_info::{StreamInfo, StreamStatus};
 use crate::theme::{NEUTRAL_800, NEUTRAL_900, PRIMARY, ROUNDING_DEFAULT};
 use crate::widgets::avatar::Avatar;
+use crate::widgets::NostrWidget;
 use eframe::epaint::{Rounding, Vec2};
 use egui::epaint::RectShape;
 use egui::load::TexturePoll;
 use egui::{
     vec2, Color32, CursorIcon, FontId, Label, Pos2, Rect, Response, RichText, Sense, TextWrapMode,
-    Ui, Widget,
+    Ui,
 };
 use nostrdb::Note;
 
 pub struct StreamEvent<'a> {
     event: &'a Note<'a>,
-    services: &'a RouteServices<'a>,
 }
 
 impl<'a> StreamEvent<'a> {
-    pub fn new(event: &'a Note<'a>, services: &'a RouteServices) -> Self {
-        Self { event, services }
+    pub fn new(event: &'a Note<'a>) -> Self {
+        Self { event }
     }
 }
-impl Widget for StreamEvent<'_> {
-    fn ui(self, ui: &mut Ui) -> Response {
+impl NostrWidget for StreamEvent<'_> {
+    fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_, '_>) -> Response {
         ui.vertical(|ui| {
             ui.style_mut().spacing.item_spacing = Vec2::new(12., 16.);
 
             let host = self.event.host();
-            let (host_profile, _sub) = self.services.ndb.fetch_profile(self.services.tx, host);
+            let host_profile = services.profile(host);
 
             let w = ui.available_width();
             let h = (w / 16.0) * 9.0;
@@ -36,7 +36,7 @@ impl Widget for StreamEvent<'_> {
             let (response, painter) = ui.allocate_painter(Vec2::new(w, h), Sense::click());
 
             let cover = if ui.is_visible() {
-                self.event.image().map(|p| self.services.img_cache.load(p))
+                self.event.image().map(|p| services.image(p))
             } else {
                 None
             };
@@ -110,13 +110,15 @@ impl Widget for StreamEvent<'_> {
             }
             let response = response.on_hover_and_drag_cursor(CursorIcon::PointingHand);
             if response.clicked() {
-                self.services.navigate(Routes::EventPage {
+                services.navigate(RouteType::EventPage {
                     link: NostrLink::from_note(self.event),
                     event: None,
                 });
             }
             ui.horizontal(|ui| {
-                ui.add(Avatar::from_profile(&host_profile, self.services).size(40.));
+                Avatar::from_profile(&host_profile)
+                    .size(40.)
+                    .render(ui, services.ctx.img_cache);
                 let title = RichText::new(self.event.title().unwrap_or("Untitled"))
                     .size(16.)
                     .color(Color32::WHITE);
@@ -124,5 +126,9 @@ impl Widget for StreamEvent<'_> {
             })
         })
         .response
+    }
+
+    fn update(&mut self, _services: &mut RouteServices<'_, '_>) -> anyhow::Result<()> {
+        Ok(())
     }
 }

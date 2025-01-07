@@ -10,13 +10,13 @@ pub struct StreamTitle<'a> {
 }
 
 impl<'a> StreamTitle<'a> {
-    pub fn new(event: &'a Note<'a>) -> StreamTitle {
+    pub fn new(event: &'a Note<'a>) -> StreamTitle<'a> {
         StreamTitle { event }
     }
 }
 
-impl<'a> NostrWidget for StreamTitle<'a> {
-    fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_>) -> Response {
+impl NostrWidget for StreamTitle<'_> {
+    fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_, '_>) -> Response {
         Frame::none()
             .outer_margin(Margin::symmetric(12., 8.))
             .show(ui, |ui| {
@@ -26,7 +26,9 @@ impl<'a> NostrWidget for StreamTitle<'a> {
                     .color(Color32::WHITE);
                 ui.add(Label::new(title.strong()).wrap_mode(TextWrapMode::Truncate));
 
-                ui.add(Profile::new(self.event.host(), services).size(32.));
+                Profile::new(self.event.host())
+                    .size(32.)
+                    .render(ui, services);
 
                 if let Some(summary) = self
                     .event
@@ -40,5 +42,9 @@ impl<'a> NostrWidget for StreamTitle<'a> {
                 }
             })
             .response
+    }
+
+    fn update(&mut self, _services: &mut RouteServices<'_, '_>) -> anyhow::Result<()> {
+        Ok(())
     }
 }

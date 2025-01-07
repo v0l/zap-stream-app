@@ -1,67 +1,26 @@
-use crate::route::Router;
-use eframe::epaint::FontFamily;
+use crate::route::{page, RouteServices, RouteType};
+use crate::widgets::{Header, NostrWidget};
+use eframe::epaint::{FontFamily, Margin};
 use eframe::CreationContext;
-use egui::{Color32, FontData, FontDefinitions, Margin};
-use nostr_sdk::prelude::MemoryDatabase;
-use nostr_sdk::Client;
-use nostrdb::{Config, Ndb};
+use egui::{Color32, FontData, FontDefinitions, Ui};
+use enostr::ewebsock::{WsEvent, WsMessage};
+use enostr::{PoolEvent, RelayEvent, RelayMessage};
+use log::{error, info, warn};
+use nostrdb::Transaction;
 use notedeck::AppContext;
-use std::path::PathBuf;
+use std::ops::Div;
+use std::sync::mpsc;
 
-pub struct ZapStreamApp<T: NativeLayerOps> {
-    client: Client,
-    router: Router<T>,
-    native_layer: T,
+pub struct ZapStreamApp {
+    current: RouteType,
+    routes_rx: mpsc::Receiver<RouteType>,
+    routes_tx: mpsc::Sender<RouteType>,
+
+    widget: Box<dyn NostrWidget>,
 }
 
-pub trait NativeLayerOps {
-    /// Get any display layout margins
-    fn frame_margin(&self) -> Margin;
-    /// Show the keyboard on the screen
-    fn show_keyboard(&self);
-    /// Hide on screen keyboard
-    fn hide_keyboard(&self);
-    fn get(&self, k: &str) -> Option<String>;
-    fn set(&mut self, k: &str, v: &str) -> bool;
-    fn remove(&mut self, k: &str) -> bool;
-    fn get_obj<T: serde::de::DeserializeOwned>(&self, k: &str) -> Option<T>;
-    fn set_obj<T: serde::Serialize>(&mut self, k: &str, v: &T) -> bool;
-}
-
-impl<T> ZapStreamApp<T>
-where
-    T: NativeLayerOps + Clone,
-{
-    pub fn new(cc: &CreationContext, data_path: PathBuf, config: T) -> Self {
-        let client = Client::builder()
-            .database(MemoryDatabase::with_opts(Default::default()))
-            .build();
-
-        let client_clone = client.clone();
-        tokio::spawn(async move {
-            client_clone
-                .add_relay("wss://nos.lol")
-                .await
-                .expect("Failed to add relay");
-            client_clone
-                .add_relay("wss://relay.damus.io")
-                .await
-                .expect("Failed to add relay");
-            client_clone
-                .add_relay("wss://relay.snort.social")
-                .await
-                .expect("Failed to add relay");
-            client_clone.connect().await;
-        });
-
-        let ndb_path = data_path.join("ndb");
-        std::fs::create_dir_all(&ndb_path).expect("Failed to create ndb directory");
-
-        let mut ndb_config = Config::default();
-        ndb_config.set_ingester_threads(4);
-
-        let ndb = Ndb::new(ndb_path.to_str().unwrap(), &ndb_config).unwrap();
-
+impl ZapStreamApp {
+    pub fn new(cc: &CreationContext) -> Self {
         let mut fd = FontDefinitions::default();
         fd.font_data.insert(
             "Outfit".to_string(),
@@ -71,63 +30,113 @@ where
             .insert(FontFamily::Proportional, vec!["Outfit".to_string()]);
         cc.egui_ctx.set_fonts(fd);
 
-        let cfg = config.clone();
+        let (tx, rx) = mpsc::channel();
         Self {
-            client: client.clone(),
-            router: Router::new(
-                data_path,
-                cc.egui_ctx.clone(),
-                client.clone(),
-                ndb.clone(),
-                cfg,
-            ),
-            native_layer: config,
+            current: RouteType::HomePage,
+            widget: Box::new(page::HomePage::new()),
+            routes_tx: tx,
+            routes_rx: rx,
         }
     }
 }
 
-#[cfg(not(feature = "notedeck"))]
-impl<T> App for ZapStreamApp<T>
-where
-    T: NativeLayerOps,
-{
-    fn update(&mut self, ctx: &Context, frame: &mut Frame) {
+impl notedeck::App for ZapStreamApp {
+    fn update(&mut self, ctx: &mut AppContext<'_>, ui: &mut Ui) {
+        ctx.accounts.update(ctx.ndb, ctx.pool, ui.ctx());
+        while let Some(PoolEvent { event, relay }) = ctx.pool.try_recv() {
+            match (&event).into() {
+                RelayEvent::Message(msg) => match msg {
+                    RelayMessage::OK(_) => {}
+                    RelayMessage::Eose(_) => {}
+                    RelayMessage::Event(_sub, ev) => {
+                        if let Err(e) = ctx.ndb.process_event(ev) {
+                            error!("Error processing event: {:?}", e);
+                        }
+                    }
+                    RelayMessage::Notice(m) => warn!("Notice from {}: {}", relay, m),
+                },
+                _ => {}
+            }
+        }
+
         let mut app_frame = egui::containers::Frame::default();
-        let margin = self.native_layer.frame_margin();
+        let margin = self.frame_margin();
 
         app_frame.inner_margin = margin;
         app_frame.stroke.color = Color32::BLACK;
 
-        //ctx.set_debug_on_hover(true);
-
+        // handle app state changes
+        while let Ok(r) = self.routes_rx.try_recv() {
+            if let RouteType::Action(a) = r {
+                match a {
+                    _ => info!("Not implemented"),
+                }
+            } else {
+                self.current = r;
+                match &self.current {
+                    RouteType::HomePage => {
+                        self.widget = Box::new(page::HomePage::new());
+                    }
+                    RouteType::EventPage { link, .. } => {
+                        self.widget = Box::new(page::StreamPage::new_from_link(link.clone()));
+                    }
+                    RouteType::LoginPage => {
+                        self.widget = Box::new(page::LoginPage::new());
+                    }
+                    RouteType::Action { .. } => panic!("Actions!"),
+                    _ => panic!("Not implemented"),
+                }
+            }
+        }
         egui::CentralPanel::default()
             .frame(app_frame)
-            .show(ctx, |ui| {
+            .show(ui.ctx(), |ui| {
                 ui.visuals_mut().override_text_color = Some(Color32::WHITE);
-                self.router.show(ui);
+
+                // display app
+                ui.vertical(|ui| {
+                    let mut svc = RouteServices {
+                        router: self.routes_tx.clone(),
+                        tx: Transaction::new(ctx.ndb).expect("transaction"),
+                        egui: ui.ctx().clone(),
+                        ctx,
+                    };
+                    Header::new().render(ui, &mut svc);
+                    if let Err(e) = self.widget.update(&mut svc) {
+                        error!("{}", e);
+                    }
+                    self.widget.render(ui, &mut svc);
+                })
+                .response
             });
     }
 }
 
-#[cfg(feature = "notedeck")]
-impl<T> notedeck::App for ZapStreamApp<T>
-where
-    T: NativeLayerOps,
-{
-    fn update(&mut self, ctx: &mut AppContext<'_>) {
-        let mut app_frame = egui::containers::Frame::default();
-        let margin = self.native_layer.frame_margin();
+#[cfg(not(target_os = "android"))]
+impl ZapStreamApp {
+    fn frame_margin(&self) -> Margin {
+        Margin::ZERO
+    }
+}
 
-        app_frame.inner_margin = margin;
-        app_frame.stroke.color = Color32::BLACK;
-
-        //ctx.set_debug_on_hover(true);
-
-        egui::CentralPanel::default()
-            .frame(app_frame)
-            .show(ctx.egui, |ui| {
-                ui.visuals_mut().override_text_color = Some(Color32::WHITE);
-                self.router.show(ui);
-            });
+#[cfg(target_os = "android")]
+impl ZapStreamApp {
+    fn frame_margin(&self) -> Margin {
+        if let Some(wd) = self.native_window() {
+            let (w, h) = (wd.width(), wd.height());
+            let c_rect = self.content_rect();
+            let dpi = self.config().density().unwrap_or(160);
+            let dpi_scale = dpi as f32 / 160.0;
+            // TODO: this calc is weird but seems to work on my phone
+            Margin {
+                bottom: (h - c_rect.bottom) as f32,
+                left: c_rect.left as f32,
+                right: (w - c_rect.right) as f32,
+                top: (c_rect.top - (h - c_rect.bottom)) as f32,
+            }
+            .div(dpi_scale)
+        } else {
+            Margin::ZERO
+        }
     }
 }

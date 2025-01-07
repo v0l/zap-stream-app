@@ -1,9 +1,6 @@
-use crate::app::{NativeLayerOps, ZapStreamApp};
+use crate::app::ZapStreamApp;
 use eframe::Renderer;
-use egui::{Margin, ViewportBuilder};
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-use std::ops::Div;
+use egui::ViewportBuilder;
 use winit::platform::android::activity::AndroidApp;
 use winit::platform::android::EventLoopBuilderExtAndroid;
 
@@ -34,57 +31,17 @@ pub fn start_android(app: AndroidApp) {
     if let Err(e) = eframe::run_native(
         "zap.stream",
         options,
-        Box::new(move |cc| Ok(Box::new(ZapStreamApp::new(cc, data_path, app)))),
+        Box::new(move |cc| {
+            let args: Vec<String> = std::env::args().collect();
+            let mut notedeck =
+                notedeck_chrome::Notedeck::new(&cc.egui_ctx, data_path.clone(), &args);
+
+            let app = ZapStreamApp::new(cc);
+            notedeck.add_app(app);
+
+            Ok(Box::new(notedeck))
+        }),
     ) {
         eprintln!("{}", e);
-    }
-}
-
-impl NativeLayerOps for AndroidApp {
-    fn frame_margin(&self) -> Margin {
-        if let Some(wd) = self.native_window() {
-            let (w, h) = (wd.width(), wd.height());
-            let c_rect = self.content_rect();
-            let dpi = self.config().density().unwrap_or(160);
-            let dpi_scale = dpi as f32 / 160.0;
-            // TODO: this calc is weird but seems to work on my phone
-            Margin {
-                bottom: (h - c_rect.bottom) as f32,
-                left: c_rect.left as f32,
-                right: (w - c_rect.right) as f32,
-                top: (c_rect.top - (h - c_rect.bottom)) as f32,
-            }
-            .div(dpi_scale)
-        } else {
-            Margin::ZERO
-        }
-    }
-
-    fn show_keyboard(&self) {
-        self.show_soft_input(true);
-    }
-
-    fn hide_keyboard(&self) {
-        self.hide_soft_input(true);
-    }
-
-    fn get(&self, k: &str) -> Option<String> {
-        None
-    }
-
-    fn set(&mut self, k: &str, v: &str) -> bool {
-        false
-    }
-
-    fn remove(&mut self, k: &str) -> bool {
-        false
-    }
-
-    fn get_obj<T: DeserializeOwned>(&self, k: &str) -> Option<T> {
-        None
-    }
-
-    fn set_obj<T: Serialize>(&mut self, k: &str, v: &T) -> bool {
-        false
     }
 }

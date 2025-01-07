@@ -1,8 +1,8 @@
-use crate::login::LoginKind;
-use crate::route::{RouteServices, Routes};
+use crate::route::{RouteServices, RouteType};
 use crate::widgets::{Button, NativeTextInput, NostrWidget};
 use egui::{Color32, Frame, Margin, Response, RichText, Ui};
-use nostr_sdk::util::hex;
+use nostr::prelude::hex;
+use nostr::SecretKey;
 
 pub struct LoginPage {
     key: String,
@@ -19,7 +19,7 @@ impl LoginPage {
 }
 
 impl NostrWidget for LoginPage {
-    fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_>) -> Response {
+    fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_, '_>) -> Response {
         Frame::none()
             .inner_margin(Margin::same(12.))
             .show(ui, |ui| {
@@ -27,30 +27,53 @@ impl NostrWidget for LoginPage {
                     ui.spacing_mut().item_spacing.y = 8.;
 
                     ui.label(RichText::new("Login").size(32.));
-                    let mut input = NativeTextInput::new(&mut self.key).with_hint_text("npub/nsec");
-                    input.render(ui, services);
+                    let input = NativeTextInput::new(&mut self.key).with_hint_text("npub/nsec");
+                    ui.add(input);
 
                     if Button::new().show(ui, |ui| ui.label("Login")).clicked() {
                         if let Ok((hrp, key)) = bech32::decode(&self.key) {
                             match hrp.to_lowercase().as_str() {
                                 "nsec" => {
-                                    services.login.login(LoginKind::PrivateKey {
-                                        key: key.as_slice().try_into().unwrap(),
-                                    });
-                                    services.navigate(Routes::HomePage);
+                                    let mut ids = services.ctx.accounts.add_account(
+                                        enostr::Keypair::from_secret(
+                                            SecretKey::from_slice(key.as_slice()).unwrap(),
+                                        ),
+                                    );
+                                    ids.process_action(
+                                        services.ctx.unknown_ids,
+                                        services.ctx.ndb,
+                                        &services.tx,
+                                    );
+                                    services.ctx.accounts.select_account(0);
+                                    services.navigate(RouteType::HomePage);
                                 }
                                 "npub" | "nprofile" => {
-                                    services.login.login(LoginKind::PublicKey {
-                                        key: key.as_slice().try_into().unwrap(),
-                                    });
-                                    services.navigate(Routes::HomePage);
+                                    let mut ids =
+                                        services.ctx.accounts.add_account(enostr::Keypair::new(
+                                            enostr::Pubkey::new(key.as_slice().try_into().unwrap()),
+                                            None,
+                                        ));
+                                    ids.process_action(
+                                        services.ctx.unknown_ids,
+                                        services.ctx.ndb,
+                                        &services.tx,
+                                    );
+                                    services.ctx.accounts.select_account(0);
+                                    services.navigate(RouteType::HomePage);
                                 }
                                 _ => {}
                             }
                         } else if let Ok(pk) = hex::decode(&self.key) {
                             if let Ok(pk) = pk.as_slice().try_into() {
-                                services.login.login(LoginKind::PublicKey { key: pk });
-                                services.navigate(Routes::HomePage);
+                                let mut ids = services.ctx.accounts.add_account(
+                                    enostr::Keypair::new(enostr::Pubkey::new(pk), None),
+                                );
+                                ids.process_action(
+                                    services.ctx.unknown_ids,
+                                    services.ctx.ndb,
+                                    &services.tx,
+                                );
+                                services.navigate(RouteType::HomePage);
                                 return;
                             }
                         }
@@ -63,5 +86,9 @@ impl NostrWidget for LoginPage {
                 .response
             })
             .inner
+    }
+
+    fn update(&mut self, _services: &mut RouteServices<'_, '_>) -> anyhow::Result<()> {
+        Ok(())
     }
 }

@@ -1,7 +1,5 @@
-use crate::route::{RouteAction, RouteServices};
 use crate::theme::{MARGIN_DEFAULT, NEUTRAL_500, NEUTRAL_900, ROUNDING_DEFAULT};
-use crate::widgets::NostrWidget;
-use egui::{Frame, Response, TextEdit, Ui};
+use egui::{Frame, Response, TextEdit, Ui, Widget};
 
 /// Wrap the [TextEdit] widget to handle native keyboard
 pub struct NativeTextInput<'a> {
@@ -30,8 +28,8 @@ impl<'a> NativeTextInput<'a> {
     }
 }
 
-impl<'a> NostrWidget for NativeTextInput<'a> {
-    fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_>) -> Response {
+impl Widget for NativeTextInput<'_> {
+    fn ui(self, ui: &mut Ui) -> Response {
         let mut editor = TextEdit::multiline(self.text)
             .frame(false)
             .desired_rows(1)
@@ -49,12 +47,6 @@ impl<'a> NostrWidget for NativeTextInput<'a> {
         } else {
             ui.add(editor)
         };
-        if response.lost_focus() {
-            services.action(RouteAction::HideKeyboard);
-        }
-        if response.gained_focus() {
-            services.action(RouteAction::ShowKeyboard);
-        }
         response
     }
 }

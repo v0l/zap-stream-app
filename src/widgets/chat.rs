@@ -1,62 +1,44 @@
 use crate::link::NostrLink;
-use crate::note_util::OwnedNote;
+use crate::note_ref::NoteRef;
 use crate::route::RouteServices;
-use crate::services::ndb_wrapper::{NDBWrapper, SubWrapper};
 use crate::widgets::chat_message::ChatMessage;
-use crate::widgets::NostrWidget;
+use crate::widgets::{sub_or_poll, NostrWidget};
 use egui::{Frame, Margin, Response, ScrollArea, Ui};
 use itertools::Itertools;
-use nostrdb::{Filter, Note, NoteKey, Transaction};
+use nostrdb::{Filter, NoteKey, Subscription};
+use std::collections::HashSet;
 
 pub struct Chat {
     link: NostrLink,
-    stream: OwnedNote,
-    events: Vec<OwnedNote>,
-    sub: SubWrapper,
+    stream: NoteKey,
+    events: HashSet<NoteRef>,
+    sub: Option<Subscription>,
 }
 
 impl Chat {
-    pub fn new(link: NostrLink, stream: OwnedNote, ndb: &NDBWrapper, tx: &Transaction) -> Self {
-        let filter = Filter::new()
-            .kinds([1_311])
-            .tags([link.to_tag_value()], 'a')
-            .build();
-        let filter = [filter];
-
-        let (sub, events) = ndb.subscribe_with_results("live-chat", &filter, tx, 500);
-
+    pub fn new<'a>(link: NostrLink, stream: NoteKey) -> Self {
         Self {
             link,
-            sub,
             stream,
-            events: events
-                .iter()
-                .map(|n| OwnedNote(n.note_key.as_u64()))
-                .collect(),
+            events: HashSet::new(),
+            sub: None,
         }
+    }
+
+    pub fn get_filter(&self) -> Filter {
+        Filter::new()
+            .kinds([1_311])
+            .tags([self.link.to_tag_value()], 'a')
+            .build()
     }
 }
 
 impl NostrWidget for Chat {
-    fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_>) -> Response {
-        let poll = services.ndb.poll(&self.sub, 500);
-        poll.iter()
-            .for_each(|n| self.events.push(OwnedNote(n.as_u64())));
-
-        let events: Vec<Note> = self
-            .events
-            .iter()
-            .map_while(|n| {
-                services
-                    .ndb
-                    .get_note_by_key(services.tx, NoteKey::new(n.0))
-                    .ok()
-            })
-            .collect();
-
+    fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_, '_>) -> Response {
         let stream = services
+            .ctx
             .ndb
-            .get_note_by_key(services.tx, NoteKey::new(self.stream.0))
+            .get_note_by_key(&services.tx, self.stream)
             .unwrap();
 
         ScrollArea::vertical()
@@ -67,17 +49,34 @@ impl NostrWidget for Chat {
                     .show(ui, |ui| {
                         ui.vertical(|ui| {
                             ui.spacing_mut().item_spacing.y = 8.0;
-                            for ev in events
-                                .into_iter()
-                                .sorted_by(|a, b| a.created_at().cmp(&b.created_at()))
+                            for ev in self
+                                .events
+                                .iter()
+                                .sorted_by(|a, b| a.created_at.cmp(&b.created_at))
                             {
-                                let c = ChatMessage::new(&stream, &ev, services);
-                                ui.add(c);
+                                if let Ok(ev) =
+                                    services.ctx.ndb.get_note_by_key(&services.tx, ev.key)
+                                {
+                                    ChatMessage::new(&stream, &ev, &None)
+                                        .render(ui, services.ctx.img_cache);
+                                }
                             }
                         })
                     })
                     .response
             })
             .inner
+    }
+
+    fn update(&mut self, services: &mut RouteServices<'_, '_>) -> anyhow::Result<()> {
+        let filters = vec![self.get_filter()];
+        sub_or_poll(
+            services.ctx.ndb,
+            &services.tx,
+            &mut services.ctx.pool,
+            &mut self.events,
+            &mut self.sub,
+            filters,
+        )
     }
 }

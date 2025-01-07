@@ -7,34 +7,30 @@ edition = "2021"
 crate-type = ["lib", "cdylib"]
 
 [features]
-default = []
-notedeck = ["dep:notedeck", "dep:notedeck-chrome"]
+default = ["notedeck"]
+notedeck = ["dep:notedeck", "dep:notedeck-chrome", "dep:enostr"]
 
 [dependencies]
 tokio = { version = "1.40.0", features = ["fs", "rt-multi-thread", "rt"] }
 egui = { version = "0.29.1", default-features = false, features = [] }
-nostrdb = { git = "https://github.com/damus-io/nostrdb-rs", rev = "3deb94aef3f436469158c4424650d81be26f9315" }
-nostr-sdk = { version = "0.37", features = ["all-nips"] }
 log = "0.4.22"
 pretty_env_logger = "0.5.0"
 egui_inbox = "0.6.0"
 bech32 = "0.11.0"
-libc = "0.2.158"
-uuid = { version = "1.11.0", features = ["v4"] }
-chrono = "0.4.38"
 anyhow = "^1.0.91"
-async-trait = "0.1.83"
-sha2 = "0.10.8"
-reqwest = { version = "0.12.7", default-features = false, features = ["rustls-tls-native-roots"] }
 itertools = "0.13.0"
-lru = "0.12.5"
-resvg = { version = "0.44.0", default-features = false }
 serde = { version = "1.0.214", features = ["derive"] }
-serde_with = { version = "3.11.0", features = ["hex"] }
 directories = "5.0.1"
 egui-video = { git = "https://github.com/v0l/egui-video.git", rev = "d2ea3b4db21eb870a207db19e4cd21c7d1d24836" }
-notedeck-chrome = { git = "https://git.v0l.io/nostr/notedeck.git", branch = "master", package = "notedeck_chrome", optional = true }
-notedeck = { git = "https://git.v0l.io/nostr/notedeck.git", branch = "master", package = "notedeck", optional = true }
+
+# notedeck stuff
+nostr = { version = "0.37.0", default-features = false, features = ["std", "nip49"] }
+nostrdb = { git = "https://github.com/damus-io/nostrdb-rs", rev = "2111948b078b24a1659d0bd5d8570f370269c99b" }
+notedeck-chrome = { git = "https://git.v0l.io/nostr/notedeck.git", rev = "e08e30f9125b9cf7391e97a2683ba0034bff1644", package = "notedeck_chrome", optional = true }
+notedeck = { git = "https://git.v0l.io/nostr/notedeck.git", rev = "e08e30f9125b9cf7391e97a2683ba0034bff1644", package = "notedeck", optional = true }
+enostr = { git = "https://git.v0l.io/nostr/notedeck.git", rev = "e08e30f9125b9cf7391e97a2683ba0034bff1644", package = "enostr", optional = true }
+poll-promise = "0.3.0"
+ehttp = "0.5.0"
 
 [target.'cfg(not(target_os = "android"))'.dependencies]
 eframe = { version = "0.29.1" }

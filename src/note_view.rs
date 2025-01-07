@@ -2,11 +2,11 @@ use crate::link::NostrLink;
 use nostrdb::Note;
 use std::collections::HashMap;
 
-pub struct NoteStore<'a> {
+pub struct NotesView<'a> {
     events: HashMap<String, &'a Note<'a>>,
 }
 
-impl<'a> NoteStore<'a> {
+impl<'a> NotesView<'a> {
     pub fn new() -> Self {
         Self {
             events: HashMap::new(),

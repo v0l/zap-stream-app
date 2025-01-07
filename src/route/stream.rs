@@ -1,42 +1,51 @@
 use crate::link::NostrLink;
-use crate::note_util::OwnedNote;
 use crate::route::RouteServices;
-use crate::services::ndb_wrapper::{NDBWrapper, SubWrapper};
 use crate::stream_info::StreamInfo;
 use crate::theme::{MARGIN_DEFAULT, NEUTRAL_800, ROUNDING_DEFAULT};
-use crate::widgets::{Chat, NostrWidget, PlaceholderRect, StreamPlayer, StreamTitle, WriteChat};
+use crate::widgets::{
+    sub_or_poll, Chat, NostrWidget, PlaceholderRect, StreamPlayer, StreamTitle, WriteChat,
+};
 use egui::{vec2, Align, Frame, Layout, Response, Stroke, Ui, Vec2, Widget};
-use nostrdb::{Filter, Note, NoteKey, Transaction};
+use nostrdb::{Filter, Note, NoteKey, Subscription};
+
+use crate::note_ref::NoteRef;
 use std::borrow::Borrow;
+use std::collections::HashSet;
 
 pub struct StreamPage {
     link: NostrLink,
-    event: Option<OwnedNote>,
+    event: Option<NoteKey>,
     player: Option<StreamPlayer>,
     chat: Option<Chat>,
-    sub: SubWrapper,
     new_msg: WriteChat,
+
+    events: HashSet<NoteRef>,
+    sub: Option<Subscription>,
 }
 
 impl StreamPage {
-    pub fn new_from_link(ndb: &NDBWrapper, tx: &Transaction, link: NostrLink) -> Self {
-        let f: Filter = link.borrow().try_into().unwrap();
-        let f = [f.limit_mut(1)];
-        let (sub, events) = ndb.subscribe_with_results("streams", &f, tx, 1);
+    pub fn new_from_link(link: NostrLink) -> Self {
         Self {
-            link: link.clone(),
-            sub,
-            event: events.first().map(|n| OwnedNote(n.note_key.as_u64())),
+            new_msg: WriteChat::new(link.clone()),
+            link,
+            event: None,
             chat: None,
             player: None,
-            new_msg: WriteChat::new(link),
+            events: HashSet::new(),
+            sub: None,
         }
     }
+
+    fn get_filters(&self) -> Vec<Filter> {
+        let f: Filter = self.link.borrow().try_into().unwrap();
+        vec![f.limit_mut(1)]
+    }
+
     fn render_mobile(
         &mut self,
         event: &Note<'_>,
         ui: &mut Ui,
-        services: &mut RouteServices<'_>,
+        services: &mut RouteServices<'_, '_>,
     ) -> Response {
         let chat_h = 60.0;
         let w = ui.available_width();
@@ -80,7 +89,7 @@ impl StreamPage {
         &mut self,
         event: &Note<'_>,
         ui: &mut Ui,
-        services: &mut RouteServices<'_>,
+        services: &mut RouteServices<'_, '_>,
     ) -> Response {
         let max_h = ui.available_height();
         let chat_w = 450.0;
@@ -136,21 +145,10 @@ impl StreamPage {
 }
 
 impl NostrWidget for StreamPage {
-    fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_>) -> Response {
-        let poll = services.ndb.poll(&self.sub, 1);
-        if let Some(k) = poll.first() {
-            self.event = Some(OwnedNote(k.as_u64()))
-        }
+    fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_, '_>) -> Response {
+        let events: Vec<Note> = vec![];
 
-        let event = if let Some(k) = &self.event {
-            services
-                .ndb
-                .get_note_by_key(services.tx, NoteKey::new(k.0))
-                .ok()
-        } else {
-            None
-        };
-        if let Some(event) = event {
+        if let Some(event) = events.first() {
             if let Some(stream) = event.stream() {
                 if self.player.is_none() {
                     let p = StreamPlayer::new(ui.ctx(), &stream.to_string());
@@ -159,8 +157,8 @@ impl NostrWidget for StreamPage {
             }
 
             if self.chat.is_none() {
-                let ok = OwnedNote(event.key().unwrap().as_u64());
-                let chat = Chat::new(self.link.clone(), ok, services.ndb, services.tx);
+                let ok = event.key().unwrap();
+                let chat = Chat::new(self.link.clone(), ok);
                 self.chat = Some(chat);
             }
 
@@ -172,5 +170,21 @@ impl NostrWidget for StreamPage {
         } else {
             ui.label("Loading..")
         }
+    }
+
+    fn update(&mut self, services: &mut RouteServices<'_, '_>) -> anyhow::Result<()> {
+        let filt = self.get_filters();
+        sub_or_poll(
+            services.ctx.ndb,
+            &services.tx,
+            &mut services.ctx.pool,
+            &mut self.events,
+            &mut self.sub,
+            filt,
+        )?;
+        if let Some(c) = self.chat.as_mut() {
+            c.update(services)?;
+        }
+        Ok(())
     }
 }

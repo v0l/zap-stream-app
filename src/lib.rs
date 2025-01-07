@@ -2,14 +2,14 @@
 mod android;
 pub mod app;
 mod link;
-mod login;
-mod note_store;
 mod note_util;
+mod note_view;
 mod route;
 mod services;
 mod stream_info;
 mod theme;
 mod widgets;
+mod note_ref;
 
 #[cfg(target_os = "android")]
 use android_activity::AndroidApp;

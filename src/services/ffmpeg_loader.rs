@@ -17,7 +17,7 @@ impl FfmpegLoader {
         Self::load_image_from_demuxer(demux)
     }
 
-    pub fn load_image_bytes<'a>(
+    pub fn load_image_bytes(
         &self,
         key: &str,
         data: &'static [u8],
