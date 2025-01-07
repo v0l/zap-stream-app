@@ -1,12 +1,10 @@
 use crate::link::NostrLink;
 use crate::route::RouteServices;
 use crate::theme::{MARGIN_DEFAULT, NEUTRAL_900, ROUNDING_DEFAULT};
-use crate::widgets::{NativeTextInput, NostrWidget};
+use crate::widgets::NativeTextInput;
 use eframe::emath::Align;
 use egui::{Frame, Layout, Response, Sense, Ui, Widget};
 use log::info;
-use nostrdb::Filter;
-use notedeck::AppContext;
 
 pub struct WriteChat {
     link: NostrLink,
@@ -20,10 +18,8 @@ impl WriteChat {
             msg: String::new(),
         }
     }
-}
 
-impl NostrWidget for WriteChat {
-    fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_, '_>) -> Response {
+    pub fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_, '_>) -> Response {
         let logo_bytes = include_bytes!("../resources/send-03.svg");
         Frame::none()
             .inner_margin(MARGIN_DEFAULT)
@@ -51,9 +47,5 @@ impl NostrWidget for WriteChat {
                 });
             })
             .response
-    }
-
-    fn update(&mut self, _services: &mut RouteServices<'_, '_>) -> anyhow::Result<()> {
-        Ok(())
     }
 }

@@ -21,9 +21,8 @@ impl<'a> StreamEvent<'a> {
     pub fn new(event: &'a Note<'a>) -> Self {
         Self { event }
     }
-}
-impl NostrWidget for StreamEvent<'_> {
-    fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_, '_>) -> Response {
+
+    pub fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_, '_>) -> Response {
         ui.vertical(|ui| {
             ui.style_mut().spacing.item_spacing = Vec2::new(12., 16.);
 
@@ -126,9 +125,5 @@ impl NostrWidget for StreamEvent<'_> {
             })
         })
         .response
-    }
-
-    fn update(&mut self, _services: &mut RouteServices<'_, '_>) -> anyhow::Result<()> {
-        Ok(())
     }
 }

@@ -33,7 +33,9 @@ impl<'a> ChatMessage<'a> {
             job.wrap.break_anywhere = true;
 
             let is_host = self.stream.host().eq(self.ev.pubkey());
-            let name = self.profile.map_or("Nostrich", |f| f.name().map_or("Nostrich", |f| f));
+            let name = self
+                .profile
+                .map_or("Nostrich", |f| f.name().map_or("Nostrich", |f| f));
 
             let name_color = if is_host { PRIMARY } else { NEUTRAL_500 };
 

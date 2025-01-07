@@ -37,7 +37,8 @@ impl NostrWidget for HomePage {
                     .collect();
 
                 let events_live = NotesView::from_vec(
-                    events.iter()
+                    events
+                        .iter()
                         .filter(|r| matches!(r.status(), StreamStatus::Live))
                         .collect(),
                 );
@@ -50,7 +51,8 @@ impl NostrWidget for HomePage {
                     .render(ui, services);
                 }
                 let events_planned = NotesView::from_vec(
-                    events.iter()
+                    events
+                        .iter()
                         .filter(|r| matches!(r.status(), StreamStatus::Planned))
                         .collect(),
                 );
@@ -63,7 +65,8 @@ impl NostrWidget for HomePage {
                     .render(ui, services);
                 }
                 let events_ended = NotesView::from_vec(
-                    events.iter()
+                    events
+                        .iter()
                         .filter(|r| matches!(r.status(), StreamStatus::Ended))
                         .collect(),
                 );

@@ -17,11 +17,7 @@ impl FfmpegLoader {
         Self::load_image_from_demuxer(demux)
     }
 
-    pub fn load_image_bytes(
-        &self,
-        key: &str,
-        data: &'static [u8],
-    ) -> Result<ColorImage, Error> {
+    pub fn load_image_bytes(&self, key: &str, data: &'static [u8]) -> Result<ColorImage, Error> {
         let demux = Demuxer::new_custom_io(data, Some(key.to_string()))?;
         Self::load_image_from_demuxer(demux)
     }
@@ -57,6 +53,7 @@ impl FfmpegLoader {
                         av_frame_free(&mut frame);
 
                         let image = video_frame_to_image(frame_rgb);
+                        av_packet_free(&mut pkt);
                         return Ok(image);
                     }
                 }

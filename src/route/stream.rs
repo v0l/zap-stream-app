@@ -6,7 +6,7 @@ use crate::widgets::{
     sub_or_poll, Chat, NostrWidget, PlaceholderRect, StreamPlayer, StreamTitle, WriteChat,
 };
 use egui::{vec2, Align, Frame, Layout, Response, Stroke, Ui, Vec2, Widget};
-use nostrdb::{Filter, Note, NoteKey, Subscription};
+use nostrdb::{Filter, Note, Subscription};
 
 use crate::note_ref::NoteRef;
 use std::borrow::Borrow;
@@ -14,7 +14,6 @@ use std::collections::HashSet;
 
 pub struct StreamPage {
     link: NostrLink,
-    event: Option<NoteKey>,
     player: Option<StreamPlayer>,
     chat: Option<Chat>,
     new_msg: WriteChat,
@@ -28,7 +27,6 @@ impl StreamPage {
         Self {
             new_msg: WriteChat::new(link.clone()),
             link,
-            event: None,
             chat: None,
             player: None,
             events: HashSet::new(),
@@ -146,7 +144,11 @@ impl StreamPage {
 
 impl NostrWidget for StreamPage {
     fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_, '_>) -> Response {
-        let events: Vec<Note> = vec![];
+        let events: Vec<Note> = self
+            .events
+            .iter()
+            .map_while(|e| services.ctx.ndb.get_note_by_key(services.tx, e.key).ok())
+            .collect();
 
         if let Some(event) = events.first() {
             if let Some(stream) = event.stream() {
@@ -173,14 +175,14 @@ impl NostrWidget for StreamPage {
     }
 
     fn update(&mut self, services: &mut RouteServices<'_, '_>) -> anyhow::Result<()> {
-        let filt = self.get_filters();
+        let filters = self.get_filters();
         sub_or_poll(
             services.ctx.ndb,
             &services.tx,
             &mut services.ctx.pool,
             &mut self.events,
             &mut self.sub,
-            filt,
+            filters,
         )?;
         if let Some(c) = self.chat.as_mut() {
             c.update(services)?;

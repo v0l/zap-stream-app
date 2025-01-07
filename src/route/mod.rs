@@ -1,21 +1,18 @@
 use crate::link::NostrLink;
-use crate::route::home::HomePage;
-use crate::route::login::LoginPage;
-use crate::route::stream::StreamPage;
 use crate::services::ffmpeg_loader::FfmpegLoader;
-use crate::widgets::{Header, NostrWidget, PlaceholderRect};
-use anyhow::{bail, Result};
-use egui::{Context, Image, Response, TextureHandle, Ui};
-use egui_inbox::{RequestRepaintTrait, UiInbox, UiInboxSender};
-use enostr::{EventClientMessage, Note};
+use egui::load::SizedTexture;
+use egui::{Context, Image, TextureHandle};
+use egui_inbox::RequestRepaintTrait;
+use enostr::EventClientMessage;
 use itertools::Itertools;
 use log::{info, warn};
-use nostr::{ClientMessage, Event, EventBuilder, JsonUtil, Kind, Tag};
-use nostrdb::{Ndb, NdbProfile, NoteKey, Transaction};
+use nostr::{Event, EventBuilder, JsonUtil, Kind, Tag};
+use nostrdb::{NdbProfile, NoteKey, Transaction};
 use notedeck::{AppContext, ImageCache};
 use poll_promise::Promise;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::mpsc;
+use std::task::Poll;
 
 mod home;
 mod login;
@@ -46,12 +43,14 @@ pub enum RouteType {
 }
 
 #[derive(PartialEq)]
-pub enum RouteAction {}
+pub enum RouteAction {
+    DemandProfile([u8; 32]),
+}
 
 pub struct RouteServices<'a, 'ctx> {
     pub router: mpsc::Sender<RouteType>,
-    pub tx: Transaction,
     pub egui: Context,
+    pub tx: &'a Transaction,
     pub ctx: &'a mut AppContext<'ctx>,
 }
 
@@ -82,8 +81,17 @@ impl<'a, 'ctx> RouteServices<'a, 'ctx> {
 
     /// Load/Fetch profiles
     pub fn profile(&self, pk: &[u8; 32]) -> Option<NdbProfile<'a>> {
-        // TODO
-        None
+        let p = self
+            .ctx
+            .ndb
+            .get_profile_by_pubkey(self.tx, pk)
+            .map(|p| p.record().profile())
+            .ok()
+            .flatten();
+        if p.is_none() {
+            self.action(RouteAction::DemandProfile(pk.clone()));
+        }
+        p
     }
 
     /// Load image from URL
@@ -116,14 +124,18 @@ impl<'a, 'ctx> RouteServices<'a, 'ctx> {
         None
     }
 }
-
+const BLACK_PIXEL: [u8; 4] = [0, 0, 0, 0];
 pub fn image_from_cache<'a>(img_cache: &mut ImageCache, ctx: &Context, url: &str) -> Image<'a> {
-    let m_cached_promise = img_cache.map().get(url);
-    if m_cached_promise.is_none() {
+    if let Some(promise) = img_cache.map().get(url) {
+        match promise.poll() {
+            Poll::Ready(Ok(t)) => Image::new(SizedTexture::from_handle(t)),
+            _ => Image::from_bytes(url.to_string(), &BLACK_PIXEL),
+        }
+    } else {
         let fetch = fetch_img(img_cache, ctx, url);
         img_cache.map_mut().insert(url.to_string(), fetch);
+        Image::from_bytes(url.to_string(), &BLACK_PIXEL)
     }
-    Image::new(url.to_string())
 }
 
 fn fetch_img(
@@ -137,7 +149,8 @@ fn fetch_img(
         let ctx = ctx.clone();
         let url = url.to_owned();
         let dst_path = dst_path.clone();
-        Promise::spawn_async(async move {
+        Promise::spawn_blocking(move || {
+            info!("Loading image from disk: {}", dst_path.display());
             match FfmpegLoader::new().load_image(dst_path) {
                 Ok(img) => Ok(ctx.load_texture(&url, img, Default::default())),
                 Err(e) => Err(notedeck::Error::Generic(e.to_string())),
@@ -159,12 +172,18 @@ fn fetch_img_from_net(
     let cloned_url = url.to_owned();
     let cache_path = cache_path.to_owned();
     ehttp::fetch(request, move |response| {
-        let handle = response.map_err(notedeck::Error::Generic).map(|img| {
-            std::fs::write(&cache_path, &img.bytes).unwrap();
-            let img_loaded = FfmpegLoader::new().load_image(cache_path).unwrap();
+        let handle = response
+            .and_then(|img| {
+                std::fs::create_dir_all(cache_path.parent().unwrap()).unwrap();
+                std::fs::write(&cache_path, &img.bytes).unwrap();
+                info!("Loading image from net: {}", cloned_url);
+                let img_loaded = FfmpegLoader::new()
+                    .load_image(cache_path)
+                    .map_err(|e| e.to_string())?;
 
-            ctx.load_texture(&cloned_url, img_loaded, Default::default())
-        });
+                Ok(ctx.load_texture(&cloned_url, img_loaded, Default::default()))
+            })
+            .map_err(notedeck::Error::Generic);
 
         sender.send(handle);
         ctx.request_repaint();

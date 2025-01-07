@@ -38,7 +38,7 @@ impl NostrWidget for Chat {
         let stream = services
             .ctx
             .ndb
-            .get_note_by_key(&services.tx, self.stream)
+            .get_note_by_key(services.tx, self.stream)
             .unwrap();
 
         ScrollArea::vertical()
@@ -55,9 +55,10 @@ impl NostrWidget for Chat {
                                 .sorted_by(|a, b| a.created_at.cmp(&b.created_at))
                             {
                                 if let Ok(ev) =
-                                    services.ctx.ndb.get_note_by_key(&services.tx, ev.key)
+                                    services.ctx.ndb.get_note_by_key(services.tx, ev.key)
                                 {
-                                    ChatMessage::new(&stream, &ev, &None)
+                                    let profile = services.profile(ev.pubkey());
+                                    ChatMessage::new(&stream, &ev, &profile)
                                         .render(ui, services.ctx.img_cache);
                                 }
                             }
@@ -72,7 +73,7 @@ impl NostrWidget for Chat {
         let filters = vec![self.get_filter()];
         sub_or_poll(
             services.ctx.ndb,
-            &services.tx,
+            services.tx,
             &mut services.ctx.pool,
             &mut self.events,
             &mut self.sub,

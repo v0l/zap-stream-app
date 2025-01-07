@@ -1,14 +1,13 @@
-use crate::route::{page, RouteServices, RouteType};
+use crate::profiles::ProfileLoader;
+use crate::route::{page, RouteAction, RouteServices, RouteType};
 use crate::widgets::{Header, NostrWidget};
 use eframe::epaint::{FontFamily, Margin};
 use eframe::CreationContext;
-use egui::{Color32, FontData, FontDefinitions, Ui};
-use enostr::ewebsock::{WsEvent, WsMessage};
+use egui::{Color32, FontData, FontDefinitions, Theme, Ui, Visuals};
 use enostr::{PoolEvent, RelayEvent, RelayMessage};
 use log::{error, info, warn};
-use nostrdb::Transaction;
+use nostrdb::{Filter, Transaction};
 use notedeck::AppContext;
-use std::ops::Div;
 use std::sync::mpsc;
 
 pub struct ZapStreamApp {
@@ -17,6 +16,7 @@ pub struct ZapStreamApp {
     routes_tx: mpsc::Sender<RouteType>,
 
     widget: Box<dyn NostrWidget>,
+    profiles: ProfileLoader,
 }
 
 impl ZapStreamApp {
@@ -34,6 +34,7 @@ impl ZapStreamApp {
         Self {
             current: RouteType::HomePage,
             widget: Box::new(page::HomePage::new()),
+            profiles: ProfileLoader::new(),
             routes_tx: tx,
             routes_rx: rx,
         }
@@ -59,16 +60,26 @@ impl notedeck::App for ZapStreamApp {
             }
         }
 
-        let mut app_frame = egui::containers::Frame::default();
-        let margin = self.frame_margin();
+        // reset theme
+        ui.ctx().set_visuals_of(
+            Theme::Dark,
+            Visuals {
+                panel_fill: Color32::BLACK,
+                override_text_color: Some(Color32::WHITE),
+                ..Default::default()
+            },
+        );
 
-        app_frame.inner_margin = margin;
-        app_frame.stroke.color = Color32::BLACK;
+        let mut app_frame = egui::containers::Frame::default();
+        app_frame.inner_margin = self.frame_margin();
 
         // handle app state changes
         while let Ok(r) = self.routes_rx.try_recv() {
             if let RouteType::Action(a) = r {
                 match a {
+                    RouteAction::DemandProfile(p) => {
+                        self.profiles.demand(p);
+                    }
                     _ => info!("Not implemented"),
                 }
             } else {
@@ -91,17 +102,16 @@ impl notedeck::App for ZapStreamApp {
         egui::CentralPanel::default()
             .frame(app_frame)
             .show(ui.ctx(), |ui| {
-                ui.visuals_mut().override_text_color = Some(Color32::WHITE);
-
+                let tx = Transaction::new(ctx.ndb).expect("transaction");
                 // display app
                 ui.vertical(|ui| {
                     let mut svc = RouteServices {
                         router: self.routes_tx.clone(),
-                        tx: Transaction::new(ctx.ndb).expect("transaction"),
+                        tx: &tx,
                         egui: ui.ctx().clone(),
                         ctx,
                     };
-                    Header::new().render(ui, &mut svc);
+                    Header::new().render(ui, &mut svc, &tx);
                     if let Err(e) = self.widget.update(&mut svc) {
                         error!("{}", e);
                     }
@@ -109,6 +119,15 @@ impl notedeck::App for ZapStreamApp {
                 })
                 .response
             });
+
+        let profiles = self.profiles.next();
+        if !profiles.is_empty() {
+            info!("Profiles: {:?}", profiles);
+            ctx.pool.subscribe(
+                "profiles".to_string(),
+                vec![Filter::new().kinds([0]).authors(&profiles).build()],
+            );
+        }
     }
 }
 

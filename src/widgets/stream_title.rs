@@ -13,10 +13,7 @@ impl<'a> StreamTitle<'a> {
     pub fn new(event: &'a Note<'a>) -> StreamTitle<'a> {
         StreamTitle { event }
     }
-}
-
-impl NostrWidget for StreamTitle<'_> {
-    fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_, '_>) -> Response {
+    pub fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_, '_>) -> Response {
         Frame::none()
             .outer_margin(Margin::symmetric(12., 8.))
             .show(ui, |ui| {
@@ -42,9 +39,5 @@ impl NostrWidget for StreamTitle<'_> {
                 }
             })
             .response
-    }
-
-    fn update(&mut self, _services: &mut RouteServices<'_, '_>) -> anyhow::Result<()> {
-        Ok(())
     }
 }

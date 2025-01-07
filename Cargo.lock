@@ -1639,7 +1639,7 @@ checksum = "a3d8a32ae18130a3c84dd492d4215c3d913c3b07c6b63c2eb3eb7ff1101ab7bf"
 [[package]]
 name = "enostr"
 version = "0.1.0"
-source = "git+https://git.v0l.io/nostr/notedeck.git?rev=e08e30f9125b9cf7391e97a2683ba0034bff1644#e08e30f9125b9cf7391e97a2683ba0034bff1644"
+source = "git+https://github.com/damus-io/notedeck?rev=06417ff69e772f24ffd7fb2b025f879463d8c51f#06417ff69e772f24ffd7fb2b025f879463d8c51f"
 dependencies = [
  "bech32",
  "ewebsock",
@@ -3023,7 +3023,7 @@ dependencies = [
 [[package]]
 name = "notedeck"
 version = "0.1.0"
-source = "git+https://git.v0l.io/nostr/notedeck.git?rev=e08e30f9125b9cf7391e97a2683ba0034bff1644#e08e30f9125b9cf7391e97a2683ba0034bff1644"
+source = "git+https://github.com/damus-io/notedeck?rev=06417ff69e772f24ffd7fb2b025f879463d8c51f#06417ff69e772f24ffd7fb2b025f879463d8c51f"
 dependencies = [
  "base32",
  "dirs",
@@ -3036,6 +3036,7 @@ dependencies = [
  "security-framework",
  "serde",
  "serde_json",
+ "sha2",
  "strum",
  "strum_macros",
  "thiserror 2.0.9",
@@ -3047,7 +3048,7 @@ dependencies = [
 [[package]]
 name = "notedeck_chrome"
 version = "0.2.0"
-source = "git+https://git.v0l.io/nostr/notedeck.git?rev=e08e30f9125b9cf7391e97a2683ba0034bff1644#e08e30f9125b9cf7391e97a2683ba0034bff1644"
+source = "git+https://github.com/damus-io/notedeck?rev=06417ff69e772f24ffd7fb2b025f879463d8c51f#06417ff69e772f24ffd7fb2b025f879463d8c51f"
 dependencies = [
  "android-activity 0.4.3",
  "eframe",
@@ -3071,7 +3072,7 @@ dependencies = [
 [[package]]
 name = "notedeck_columns"
 version = "0.2.0"
-source = "git+https://git.v0l.io/nostr/notedeck.git?rev=e08e30f9125b9cf7391e97a2683ba0034bff1644#e08e30f9125b9cf7391e97a2683ba0034bff1644"
+source = "git+https://github.com/damus-io/notedeck?rev=06417ff69e772f24ffd7fb2b025f879463d8c51f#06417ff69e772f24ffd7fb2b025f879463d8c51f"
 dependencies = [
  "bitflags 2.6.0",
  "dirs",
