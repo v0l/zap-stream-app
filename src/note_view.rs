@@ -26,7 +26,7 @@ impl<'a> NotesView<'a> {
     }
 
     pub fn add(&mut self, note: &'a Note<'a>) -> Option<&'a Note<'a>> {
-        let k = Self::key(&note);
+        let k = Self::key(note);
         if let Some(v) = self.events.get(&k) {
             if v.created_at() < note.created_at() {
                 return self.events.insert(k, note);

@@ -35,7 +35,7 @@ impl WriteChat {
                         .clicked()
                         || self.msg.ends_with('\n')
                     {
-                        if let Some(ev) = services.write_live_chat_msg(&self.link, &self.msg.trim())
+                        if let Some(ev) = services.write_live_chat_msg(&self.link, self.msg.trim())
                         {
                             info!("Sending: {:?}", ev);
                             services.broadcast_event(ev);

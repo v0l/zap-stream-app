@@ -1,6 +1,6 @@
 use crate::route::{RouteServices, RouteType};
 use crate::widgets::avatar::Avatar;
-use crate::widgets::{Button, NostrWidget};
+use crate::widgets::Button;
 use eframe::emath::Align;
 use eframe::epaint::Vec2;
 use egui::{CursorIcon, Frame, Layout, Margin, Response, Sense, Ui, Widget};

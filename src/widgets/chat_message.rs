@@ -1,6 +1,6 @@
 use crate::stream_info::StreamInfo;
 use crate::theme::{NEUTRAL_500, PRIMARY};
-use crate::widgets::{Avatar, NostrWidget};
+use crate::widgets::Avatar;
 use eframe::epaint::text::TextWrapMode;
 use egui::text::LayoutJob;
 use egui::{Align, Color32, Label, Response, TextFormat, Ui};
@@ -48,7 +48,7 @@ impl<'a> ChatMessage<'a> {
             format.color = Color32::WHITE;
             job.append(self.ev.content(), 5.0, format.clone());
 
-            Avatar::from_profile(&self.profile)
+            Avatar::from_profile(self.profile)
                 .size(24.)
                 .render(ui, img_cache);
             ui.add(Label::new(job).wrap_mode(TextWrapMode::Wrap));

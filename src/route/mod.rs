@@ -3,7 +3,6 @@ use crate::services::ffmpeg_loader::FfmpegLoader;
 use egui::load::SizedTexture;
 use egui::{Context, Image, TextureHandle};
 use enostr::EventClientMessage;
-use itertools::Itertools;
 use log::{info, warn};
 use nostr::{Event, EventBuilder, JsonUtil, Kind, Tag};
 use nostrdb::{NdbProfile, NoteKey, Transaction};
@@ -53,7 +52,7 @@ pub struct RouteServices<'a, 'ctx> {
     pub ctx: &'a mut AppContext<'ctx>,
 }
 
-impl<'a, 'ctx> RouteServices<'a, 'ctx> {
+impl<'a> RouteServices<'a, '_> {
     pub fn navigate(&self, route: RouteType) {
         self.router.send(route).expect("route send failed");
         self.egui.request_repaint();
@@ -88,7 +87,7 @@ impl<'a, 'ctx> RouteServices<'a, 'ctx> {
             .ok()
             .flatten();
         if p.is_none() {
-            self.action(RouteAction::DemandProfile(pk.clone()));
+            self.action(RouteAction::DemandProfile(*pk));
         }
         p
     }
@@ -105,19 +104,17 @@ impl<'a, 'ctx> RouteServices<'a, 'ctx> {
     }
 
     pub fn write_live_chat_msg(&self, link: &NostrLink, msg: &str) -> Option<Event> {
-        if msg.len() == 0 {
+        if msg.is_empty() {
             return None;
         }
         if let Some(acc) = self.ctx.accounts.get_selected_account() {
             if let Some(key) = &acc.secret_key {
                 let nostr_key =
                     nostr::Keys::new(nostr::SecretKey::from_slice(key.as_secret_bytes()).unwrap());
-                return Some(
-                    EventBuilder::new(Kind::LiveEventMessage, msg)
-                        .tag(Tag::parse(&link.to_tag()).unwrap())
+                return EventBuilder::new(Kind::LiveEventMessage, msg)
+                        .tag(Tag::parse(link.to_tag()).unwrap())
                         .sign_with_keys(&nostr_key)
-                        .ok()?,
-                );
+                        .ok();
             }
         }
         None

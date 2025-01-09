@@ -1,7 +1,7 @@
 use crate::note_util::NoteUtil;
 use crate::route::RouteServices;
 use crate::stream_info::StreamInfo;
-use crate::widgets::{NostrWidget, Profile};
+use crate::widgets::Profile;
 use egui::{Color32, Frame, Label, Margin, Response, RichText, TextWrapMode, Ui};
 use nostrdb::Note;
 
@@ -32,7 +32,7 @@ impl<'a> StreamTitle<'a> {
                     .get_tag_value("summary")
                     .and_then(|r| r.variant().str())
                 {
-                    if summary.len() > 0 {
+                    if !summary.is_empty() {
                         let summary = RichText::new(summary).color(Color32::WHITE);
                         ui.add(Label::new(summary).wrap_mode(TextWrapMode::Truncate));
                     }

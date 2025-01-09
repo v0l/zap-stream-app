@@ -1,6 +1,6 @@
 use crate::route::RouteServices;
 use crate::theme::FONT_SIZE;
-use crate::widgets::{Avatar, NostrWidget, Username};
+use crate::widgets::{Avatar, Username};
 use egui::{Response, Ui};
 
 pub struct Profile<'a> {

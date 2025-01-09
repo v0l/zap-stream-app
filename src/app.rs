@@ -15,10 +15,38 @@ pub struct ZapStreamApp {
     routes_rx: mpsc::Receiver<RouteType>,
     routes_tx: mpsc::Sender<RouteType>,
 
+    #[cfg(target_os = "android")]
+    app: android_activity::AndroidApp,
+
     widget: Box<dyn NostrWidget>,
     profiles: ProfileLoader,
 }
 
+#[cfg(target_os = "android")]
+impl ZapStreamApp {
+    pub fn new(cc: &CreationContext, app: android_activity::AndroidApp) -> Self {
+        let mut fd = FontDefinitions::default();
+        fd.font_data.insert(
+            "Outfit".to_string(),
+            FontData::from_static(include_bytes!("../assets/Outfit-Light.ttf")),
+        );
+        fd.families
+            .insert(FontFamily::Proportional, vec!["Outfit".to_string()]);
+        cc.egui_ctx.set_fonts(fd);
+
+        let (tx, rx) = mpsc::channel();
+        Self {
+            current: RouteType::HomePage,
+            widget: Box::new(page::HomePage::new()),
+            profiles: ProfileLoader::new(),
+            routes_tx: tx,
+            routes_rx: rx,
+            app,
+        }
+    }
+}
+
+#[cfg(not(target_os = "android"))]
 impl ZapStreamApp {
     pub fn new(cc: &CreationContext) -> Self {
         let mut fd = FontDefinitions::default();
@@ -45,8 +73,8 @@ impl notedeck::App for ZapStreamApp {
     fn update(&mut self, ctx: &mut AppContext<'_>, ui: &mut Ui) {
         ctx.accounts.update(ctx.ndb, ctx.pool, ui.ctx());
         while let Some(PoolEvent { event, relay }) = ctx.pool.try_recv() {
-            match (&event).into() {
-                RelayEvent::Message(msg) => match msg {
+            if let RelayEvent::Message(msg) = (&event).into() {
+                match msg {
                     RelayMessage::OK(_) => {}
                     RelayMessage::Eose(_) => {}
                     RelayMessage::Event(_sub, ev) => {
@@ -55,8 +83,7 @@ impl notedeck::App for ZapStreamApp {
                         }
                     }
                     RelayMessage::Notice(m) => warn!("Notice from {}: {}", relay, m),
-                },
-                _ => {}
+                }
             }
         }
 
@@ -141,10 +168,10 @@ impl ZapStreamApp {
 #[cfg(target_os = "android")]
 impl ZapStreamApp {
     fn frame_margin(&self) -> Margin {
-        if let Some(wd) = self.native_window() {
+        if let Some(wd) = self.app.native_window() {
             let (w, h) = (wd.width(), wd.height());
-            let c_rect = self.content_rect();
-            let dpi = self.config().density().unwrap_or(160);
+            let c_rect = self.app.content_rect();
+            let dpi = self.app.config().density().unwrap_or(160);
             let dpi_scale = dpi as f32 / 160.0;
             // TODO: this calc is weird but seems to work on my phone
             Margin {
@@ -152,8 +179,7 @@ impl ZapStreamApp {
                 left: c_rect.left as f32,
                 right: (w - c_rect.right) as f32,
                 top: (c_rect.top - (h - c_rect.bottom)) as f32,
-            }
-            .div(dpi_scale)
+            } / dpi_scale
         } else {
             Margin::ZERO
         }

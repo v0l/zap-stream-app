@@ -64,7 +64,7 @@ impl StreamPage {
                         ui.add(PlaceholderRect)
                     }
                 });
-                StreamTitle::new(&event).render(ui, services);
+                StreamTitle::new(event).render(ui, services);
 
                 if let Some(c) = self.chat.as_mut() {
                     ui.allocate_ui(
@@ -107,7 +107,7 @@ impl StreamPage {
                         }
                     });
                     ui.add_space(10.);
-                    StreamTitle::new(&event).render(ui, services);
+                    StreamTitle::new(event).render(ui, services);
                 });
                 ui.allocate_ui_with_layout(
                     vec2(chat_w, max_h),
@@ -166,9 +166,9 @@ impl NostrWidget for StreamPage {
             }
 
             if ui.available_width() < 720.0 {
-                self.render_mobile(&event, ui, services)
+                self.render_mobile(event, ui, services)
             } else {
-                self.render_desktop(&event, ui, services)
+                self.render_desktop(event, ui, services)
             }
         } else {
             ui.label("Loading..")
@@ -179,8 +179,8 @@ impl NostrWidget for StreamPage {
         let filters = self.get_filters();
         sub_or_poll(
             services.ctx.ndb,
-            &services.tx,
-            &mut services.ctx.pool,
+            services.tx,
+            services.ctx.pool,
             &mut self.events,
             &mut self.sub,
             filters,

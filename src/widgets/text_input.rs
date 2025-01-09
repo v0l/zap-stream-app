@@ -37,7 +37,8 @@ impl Widget for NativeTextInput<'_> {
         if let Some(hint_text) = self.hint_text {
             editor = editor.hint_text(egui::RichText::new(hint_text).color(NEUTRAL_500));
         }
-        let response = if self.frame {
+        
+        if self.frame {
             Frame::none()
                 .inner_margin(MARGIN_DEFAULT)
                 .fill(NEUTRAL_900)
@@ -46,7 +47,6 @@ impl Widget for NativeTextInput<'_> {
                 .inner
         } else {
             ui.add(editor)
-        };
-        response
+        }
     }
 }

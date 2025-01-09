@@ -54,7 +54,7 @@ impl<'a> ChatZap<'a> {
                         job.append(&format!("\n{}", self.zap.message), 0.0, format.clone());
                     }
 
-                    Avatar::from_profile(&self.profile)
+                    Avatar::from_profile(self.profile)
                         .size(24.)
                         .render(ui, img_cache);
                     ui.add(Label::new(job).wrap_mode(TextWrapMode::Wrap));

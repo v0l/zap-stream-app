@@ -9,7 +9,7 @@ pub trait NoteUtil {
         F: Fn(Vec<NdbStr>) -> bool;
 }
 
-impl<'a> NoteUtil for Note<'a> {
+impl NoteUtil for Note<'_> {
     fn id_hex(&self) -> String {
         hex::encode(self.id())
     }

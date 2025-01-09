@@ -42,7 +42,7 @@ impl NostrWidget for LoginPage {
                                     ids.process_action(
                                         services.ctx.unknown_ids,
                                         services.ctx.ndb,
-                                        &services.tx,
+                                        services.tx,
                                     );
                                     services.ctx.accounts.select_account(0);
                                     services.navigate(RouteType::HomePage);
@@ -56,7 +56,7 @@ impl NostrWidget for LoginPage {
                                     ids.process_action(
                                         services.ctx.unknown_ids,
                                         services.ctx.ndb,
-                                        &services.tx,
+                                        services.tx,
                                     );
                                     services.ctx.accounts.select_account(0);
                                     services.navigate(RouteType::HomePage);
@@ -71,7 +71,7 @@ impl NostrWidget for LoginPage {
                                 ids.process_action(
                                     services.ctx.unknown_ids,
                                     services.ctx.ndb,
-                                    &services.tx,
+                                    services.tx,
                                 );
                                 services.navigate(RouteType::HomePage);
                                 return;

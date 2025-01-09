@@ -39,7 +39,7 @@ pub trait StreamInfo {
     fn viewers(&self) -> Option<u32>;
 }
 
-impl<'a> StreamInfo for Note<'a> {
+impl StreamInfo for Note<'_> {
     fn title(&self) -> Option<&str> {
         if let Some(s) = self.get_tag_value("title") {
             s.variant().str()

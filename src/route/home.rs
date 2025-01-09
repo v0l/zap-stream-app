@@ -34,7 +34,7 @@ impl NostrWidget for HomePage {
                 let events: Vec<Note> = self
                     .events
                     .iter()
-                    .map_while(|n| services.ctx.ndb.get_note_by_key(&services.tx, n.key).ok())
+                    .map_while(|n| services.ctx.ndb.get_note_by_key(services.tx, n.key).ok())
                     .collect();
 
                 let events_live = NotesView::from_vec(
@@ -87,8 +87,8 @@ impl NostrWidget for HomePage {
     fn update(&mut self, services: &mut RouteServices<'_, '_>) -> anyhow::Result<()> {
         sub_or_poll(
             services.ctx.ndb,
-            &services.tx,
-            &mut services.ctx.pool,
+            services.tx,
+            services.ctx.pool,
             &mut self.events,
             &mut self.sub,
             Self::get_filters(),

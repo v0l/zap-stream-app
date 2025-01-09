@@ -3,7 +3,6 @@ use crate::route::{RouteServices, RouteType};
 use crate::stream_info::{StreamInfo, StreamStatus};
 use crate::theme::{NEUTRAL_800, NEUTRAL_900, PRIMARY, ROUNDING_DEFAULT};
 use crate::widgets::avatar::Avatar;
-use crate::widgets::NostrWidget;
 use eframe::epaint::{Rounding, Vec2};
 use egui::epaint::RectShape;
 use egui::load::TexturePoll;

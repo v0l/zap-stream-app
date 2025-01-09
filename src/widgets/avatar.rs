@@ -18,7 +18,7 @@ impl Avatar {
 
     pub fn pubkey(pk: &[u8; 32], ndb: &Ndb, tx: &Transaction) -> Self {
         let picture = ndb
-            .get_profile_by_pubkey(&tx, pk)
+            .get_profile_by_pubkey(tx, pk)
             .map(|p| p.record().profile().map(|p| p.picture()).unwrap_or(None))
             .unwrap_or(None);
         Self {
@@ -57,7 +57,7 @@ impl Avatar {
             return Self::placeholder(ui, size_v);
         }
         match &self.image {
-            Some(img) => image_from_cache(img_cache, ui.ctx(), &img)
+            Some(img) => image_from_cache(img_cache, ui.ctx(), img)
                 .fit_to_exact_size(size)
                 .rounding(Rounding::same(size_v))
                 .ui(ui),

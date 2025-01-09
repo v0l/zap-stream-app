@@ -15,11 +15,8 @@ mod widgets;
 mod zap;
 
 #[cfg(target_os = "android")]
-use android_activity::AndroidApp;
-
-#[cfg(target_os = "android")]
 #[no_mangle]
 #[tokio::main]
-pub async fn android_main(app: AndroidApp) {
+pub async fn android_main(app: android_activity::AndroidApp) {
     android::start_android(app);
 }

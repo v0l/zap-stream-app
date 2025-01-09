@@ -1,6 +1,5 @@
 use crate::note_util::NoteUtil;
 use bech32::{Hrp, NoChecksum};
-use egui::TextBuffer;
 use nostr::prelude::hex;
 use nostrdb::{Filter, Note};
 use std::fmt::{Display, Formatter};

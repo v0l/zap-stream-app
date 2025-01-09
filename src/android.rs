@@ -36,8 +36,8 @@ pub fn start_android(app: AndroidApp) {
             let mut notedeck =
                 notedeck_chrome::Notedeck::new(&cc.egui_ctx, data_path.clone(), &args);
 
-            let app = ZapStreamApp::new(cc);
-            notedeck.add_app(app);
+            let zs_app = ZapStreamApp::new(cc, app.clone());
+            notedeck.add_app(zs_app);
 
             Ok(Box::new(notedeck))
         }),

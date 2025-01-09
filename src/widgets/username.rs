@@ -12,7 +12,7 @@ impl<'a> Username<'a> {
     }
 }
 
-impl<'a> Widget for Username<'a> {
+impl Widget for Username<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
         let name = self
             .profile

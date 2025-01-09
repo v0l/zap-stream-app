@@ -2,7 +2,6 @@ use crate::note_view::NotesView;
 use crate::route::RouteServices;
 use crate::stream_info::StreamInfo;
 use crate::widgets::stream_tile::StreamEvent;
-use crate::widgets::NostrWidget;
 use egui::{vec2, Frame, Grid, Margin, Response, Ui, WidgetText};
 use itertools::Itertools;
 

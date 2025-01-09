@@ -89,7 +89,7 @@ impl NostrWidget for Chat {
         sub_or_poll(
             services.ctx.ndb,
             services.tx,
-            &mut services.ctx.pool,
+            services.ctx.pool,
             &mut self.events,
             &mut self.sub,
             filters,
