@@ -38,7 +38,7 @@ dependencies = [
  "accesskit_consumer",
  "atspi-common",
  "serde",
- "thiserror 1.0.64",
+ "thiserror 1.0.69",
  "zvariant",
 ]
 
@@ -230,7 +230,7 @@ dependencies = [
  "ndk-context",
  "ndk-sys 0.6.0+11769913",
  "num_enum 0.7.3",
- "thiserror 1.0.64",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -897,7 +897,7 @@ dependencies = [
  "polling",
  "rustix",
  "slab",
- "thiserror 1.0.64",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -1490,7 +1490,7 @@ dependencies = [
  "egui",
  "epaint",
  "log",
- "thiserror 1.0.64",
+ "thiserror 1.0.69",
  "type-map",
  "web-time",
  "wgpu",
@@ -2222,7 +2222,7 @@ checksum = "fdd4240fc91d3433d5e5b0fc5b67672d771850dc19bbee03c1381e19322803d7"
 dependencies = [
  "log",
  "presser",
- "thiserror 1.0.64",
+ "thiserror 1.0.69",
  "winapi",
  "windows 0.52.0",
 ]
@@ -2283,7 +2283,7 @@ dependencies = [
  "com",
  "libc",
  "libloading",
- "thiserror 1.0.64",
+ "thiserror 1.0.69",
  "widestring",
  "winapi",
 ]
@@ -2530,6 +2530,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2546,7 +2555,7 @@ dependencies = [
  "combine",
  "jni-sys",
  "log",
- "thiserror 1.0.64",
+ "thiserror 1.0.69",
  "walkdir",
  "windows-sys 0.45.0",
 ]
@@ -2845,7 +2854,7 @@ dependencies = [
  "rustc-hash",
  "spirv",
  "termcolor",
- "thiserror 1.0.64",
+ "thiserror 1.0.69",
  "unicode-xid",
 ]
 
@@ -2860,7 +2869,7 @@ dependencies = [
  "ndk-sys 0.4.1+23.1.7779620",
  "num_enum 0.5.11",
  "raw-window-handle 0.5.2",
- "thiserror 1.0.64",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -2874,7 +2883,7 @@ dependencies = [
  "log",
  "ndk-sys 0.5.0+25.2.9519653",
  "num_enum 0.7.3",
- "thiserror 1.0.64",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -2889,7 +2898,7 @@ dependencies = [
  "ndk-sys 0.6.0+11769913",
  "num_enum 0.7.3",
  "raw-window-handle 0.6.2",
- "thiserror 1.0.64",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -3913,7 +3922,7 @@ dependencies = [
  "rand_chacha",
  "simd_helpers",
  "system-deps",
- "thiserror 1.0.64",
+ "thiserror 1.0.69",
  "v_frame",
  "wasm-bindgen",
 ]
@@ -3996,7 +4005,7 @@ checksum = "ba009ff324d1fc1b900bd1fdb31564febe58a8ccc8a6fdbb93b543d33b13ca43"
 dependencies = [
  "getrandom",
  "libredox",
- "thiserror 1.0.64",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -4449,7 +4458,7 @@ dependencies = [
  "log",
  "memmap2",
  "rustix",
- "thiserror 1.0.64",
+ "thiserror 1.0.69",
  "wayland-backend",
  "wayland-client",
  "wayland-csd-frame",
@@ -4610,11 +4619,11 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "1.0.64"
+version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d50af8abc119fb8bb6dbabcfa89656f46f84aa0ac7688088608076ad2b459a84"
+checksum = "b6aaf5339b578ea85b50e080feb250a3e8ae8cfcdff9a461c9ec2904bc923f52"
 dependencies = [
- "thiserror-impl 1.0.64",
+ "thiserror-impl 1.0.69",
 ]
 
 [[package]]
@@ -4628,9 +4637,9 @@ dependencies = [
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.64"
+version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08904e7672f5eb876eaaf87e0ce17857500934f4981c4a0ab2b4aa98baac7fc3"
+checksum = "4fee6c4efc90059e10f81e6d42c60a18f76588c3d74cb83a0b242a2b6c7504c1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4826,7 +4835,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3566e8ce28cc0a3fe42519fc80e6b4c943cc4c8cef275620eb8dac2d3d4e06cf"
 dependencies = [
  "crossbeam-channel",
- "thiserror 1.0.64",
+ "thiserror 1.0.69",
  "time",
  "tracing-subscriber",
 ]
@@ -4914,7 +4923,7 @@ dependencies = [
  "rustls",
  "rustls-pki-types",
  "sha1",
- "thiserror 1.0.64",
+ "thiserror 1.0.69",
  "utf-8",
  "webpki-roots",
 ]
@@ -5424,7 +5433,7 @@ dependencies = [
  "raw-window-handle 0.6.2",
  "rustc-hash",
  "smallvec",
- "thiserror 1.0.64",
+ "thiserror 1.0.69",
  "wgpu-hal",
  "wgpu-types",
 ]
@@ -5464,7 +5473,7 @@ dependencies = [
  "renderdoc-sys",
  "rustc-hash",
  "smallvec",
- "thiserror 1.0.64",
+ "thiserror 1.0.69",
  "wasm-bindgen",
  "web-sys",
  "wgpu-types",
@@ -6019,10 +6028,9 @@ dependencies = [
  "eframe",
  "egui",
  "egui-video",
- "egui_inbox",
  "ehttp 0.5.0",
  "enostr",
- "itertools 0.13.0",
+ "itertools 0.14.0",
  "log",
  "nostr",
  "nostrdb",

@@ -2,7 +2,6 @@ use crate::link::NostrLink;
 use crate::services::ffmpeg_loader::FfmpegLoader;
 use egui::load::SizedTexture;
 use egui::{Context, Image, TextureHandle};
-use egui_inbox::RequestRepaintTrait;
 use enostr::EventClientMessage;
 use itertools::Itertools;
 use log::{info, warn};
