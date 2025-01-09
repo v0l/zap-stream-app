@@ -26,7 +26,7 @@ impl<'a> ChatMessage<'a> {
         }
     }
 
-    pub fn render(&mut self, ui: &mut Ui, img_cache: &mut ImageCache) -> Response {
+    pub fn render(self, ui: &mut Ui, img_cache: &mut ImageCache) -> Response {
         ui.horizontal_wrapped(|ui| {
             let mut job = LayoutJob::default();
             // TODO: avoid this somehow
@@ -52,6 +52,9 @@ impl<'a> ChatMessage<'a> {
                 .size(24.)
                 .render(ui, img_cache);
             ui.add(Label::new(job).wrap_mode(TextWrapMode::Wrap));
+
+            // consume reset of space
+            ui.add_space(ui.available_size_before_wrap().x);
         })
         .response
     }

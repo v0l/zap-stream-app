@@ -6,9 +6,10 @@ use crate::widgets::{
     sub_or_poll, Chat, NostrWidget, PlaceholderRect, StreamPlayer, StreamTitle, WriteChat,
 };
 use egui::{vec2, Align, Frame, Layout, Response, Stroke, Ui, Vec2, Widget};
-use nostrdb::{Filter, Note, Subscription};
+use nostrdb::{Filter, Note};
 
 use crate::note_ref::NoteRef;
+use crate::sub::SubRef;
 use std::borrow::Borrow;
 use std::collections::HashSet;
 
@@ -19,7 +20,7 @@ pub struct StreamPage {
     new_msg: WriteChat,
 
     events: HashSet<NoteRef>,
-    sub: Option<Subscription>,
+    sub: Option<SubRef>,
 }
 
 impl StreamPage {

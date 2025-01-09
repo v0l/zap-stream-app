@@ -2,6 +2,7 @@ mod avatar;
 mod button;
 mod chat;
 mod chat_message;
+mod chat_zap;
 mod header;
 mod placeholder_rect;
 mod profile;
@@ -15,9 +16,10 @@ mod write_chat;
 
 use crate::note_ref::NoteRef;
 use crate::route::RouteServices;
+use crate::sub::SubRef;
 use egui::{Response, Ui};
 use enostr::RelayPool;
-use nostrdb::{Filter, Ndb, Subscription, Transaction};
+use nostrdb::{Filter, Ndb, Transaction};
 use std::collections::HashSet;
 
 /// A stateful widget which requests nostr data
@@ -35,18 +37,18 @@ pub fn sub_or_poll(
     tx: &Transaction,
     pool: &mut RelayPool,
     store: &mut HashSet<NoteRef>,
-    sub: &mut Option<Subscription>,
+    sub: &mut Option<SubRef>,
     filters: Vec<Filter>,
 ) -> anyhow::Result<()> {
     if let Some(sub) = sub {
-        ndb.poll_for_notes(*sub, 500).into_iter().for_each(|e| {
+        ndb.poll_for_notes(sub.sub, 500).into_iter().for_each(|e| {
             if let Ok(note) = ndb.get_note_by_key(tx, e) {
                 store.insert(NoteRef::from_note(&note));
             }
         });
     } else {
         let s = ndb.subscribe(filters.as_slice())?;
-        sub.replace(s);
+        sub.replace(SubRef::new(s, ndb.clone()));
         ndb.query(tx, filters.as_slice(), 500)?
             .into_iter()
             .for_each(|e| {

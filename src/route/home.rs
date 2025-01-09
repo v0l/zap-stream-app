@@ -2,15 +2,16 @@ use crate::note_ref::NoteRef;
 use crate::note_view::NotesView;
 use crate::route::RouteServices;
 use crate::stream_info::{StreamInfo, StreamStatus};
+use crate::sub::SubRef;
 use crate::widgets;
 use crate::widgets::{sub_or_poll, NostrWidget};
 use egui::{Id, Response, RichText, ScrollArea, Ui};
-use nostrdb::{Filter, Note, Subscription};
+use nostrdb::{Filter, Note};
 use std::collections::HashSet;
 
 pub struct HomePage {
     events: HashSet<NoteRef>,
-    sub: Option<Subscription>,
+    sub: Option<SubRef>,
 }
 
 impl HomePage {

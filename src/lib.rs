@@ -9,8 +9,10 @@ mod profiles;
 mod route;
 mod services;
 mod stream_info;
+mod sub;
 mod theme;
 mod widgets;
+mod zap;
 
 #[cfg(target_os = "android")]
 use android_activity::AndroidApp;
