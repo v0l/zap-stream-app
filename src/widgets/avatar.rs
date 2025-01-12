@@ -50,7 +50,7 @@ impl Avatar {
         response
     }
 
-    pub fn render(&self, ui: &mut Ui, img_cache: &mut ImageCache) -> Response {
+    pub fn render(self, ui: &mut Ui, img_cache: &mut ImageCache) -> Response {
         let size_v = self.size.unwrap_or(40.);
         let size = Vec2::new(size_v, size_v);
         if !ui.is_visible() {

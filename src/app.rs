@@ -8,6 +8,8 @@ use enostr::{PoolEvent, RelayEvent, RelayMessage};
 use log::{error, info, warn};
 use nostrdb::{Filter, Transaction};
 use notedeck::AppContext;
+use poll_promise::Promise;
+use std::collections::HashMap;
 use std::sync::mpsc;
 
 pub struct ZapStreamApp {
@@ -20,6 +22,7 @@ pub struct ZapStreamApp {
 
     widget: Box<dyn NostrWidget>,
     profiles: ProfileLoader,
+    fetch: HashMap<String, Promise<ehttp::Result<ehttp::Response>>>,
 }
 
 #[cfg(target_os = "android")]
@@ -65,6 +68,7 @@ impl ZapStreamApp {
             profiles: ProfileLoader::new(),
             routes_tx: tx,
             routes_rx: rx,
+            fetch: HashMap::new(),
         }
     }
 }
@@ -132,12 +136,13 @@ impl notedeck::App for ZapStreamApp {
                 let tx = Transaction::new(ctx.ndb).expect("transaction");
                 // display app
                 ui.vertical(|ui| {
-                    let mut svc = RouteServices {
-                        router: self.routes_tx.clone(),
-                        tx: &tx,
-                        egui: ui.ctx().clone(),
+                    let mut svc = RouteServices::new(
+                        ui.ctx().clone(),
+                        &tx,
                         ctx,
-                    };
+                        self.routes_tx.clone(),
+                        &mut self.fetch,
+                    );
                     Header::new().render(ui, &mut svc, &tx);
                     if let Err(e) = self.widget.update(&mut svc) {
                         error!("{}", e);

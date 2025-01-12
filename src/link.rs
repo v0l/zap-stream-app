@@ -1,10 +1,11 @@
 use crate::note_util::NoteUtil;
 use bech32::{Hrp, NoChecksum};
-use nostr::prelude::hex;
-use nostrdb::{Filter, Note};
+use nostr::prelude::{hex, Coordinate};
+use nostr::{Kind, PublicKey};
+use nostrdb::{Filter, NdbStrVariant, Note};
 use std::fmt::{Display, Formatter};
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq, Hash)]
 pub struct NostrLink {
     pub hrp: NostrLinkType,
     pub id: IdOrStr,
@@ -13,7 +14,7 @@ pub struct NostrLink {
     pub relays: Vec<String>,
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq, Hash)]
 pub enum IdOrStr {
     Id([u8; 32]),
     Str(String),
@@ -28,7 +29,7 @@ impl Display for IdOrStr {
     }
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq, Hash)]
 pub enum NostrLinkType {
     Note,
     PublicKey,
@@ -58,22 +59,16 @@ impl NostrLink {
     }
 
     pub fn from_note(note: &Note<'_>) -> Self {
-        if note.kind() >= 30_000
-            && note.kind() < 40_000
-            && note
-                .get_tag_value("d")
-                .and_then(|v| v.variant().str())
-                .is_some()
-        {
+        if note.kind() >= 30_000 && note.kind() < 40_000 {
             Self {
                 hrp: NostrLinkType::Coordinate,
                 id: IdOrStr::Str(
                     note.get_tag_value("d")
-                        .unwrap()
-                        .variant()
-                        .str()
-                        .unwrap()
-                        .to_string(),
+                        .map(|t| match t.variant() {
+                            NdbStrVariant::Id(s) => hex::encode(s),
+                            NdbStrVariant::Str(s) => s.to_owned(),
+                        })
+                        .unwrap_or(String::from("")),
                 ),
                 kind: Some(note.kind()),
                 author: Some(*note.pubkey()),
@@ -168,6 +163,21 @@ impl Display for NostrLink {
                 .map_err(|e| std::fmt::Error)?)
             }
             NostrLinkType::Event | NostrLinkType::Profile | NostrLinkType::Coordinate => todo!(),
+        }
+    }
+}
+
+impl TryInto<Coordinate> for NostrLink {
+    type Error = ();
+
+    fn try_into(self) -> Result<Coordinate, Self::Error> {
+        match self.hrp {
+            NostrLinkType::Coordinate => Ok(Coordinate::new(
+                Kind::from_u16(self.kind.unwrap() as u16),
+                PublicKey::from_slice(&self.author.unwrap()).unwrap(),
+            )
+            .identifier(self.id.to_string())),
+            _ => Err(()),
         }
     }
 }

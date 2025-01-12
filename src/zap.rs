@@ -1,5 +1,8 @@
 use crate::note_util::NoteUtil;
 use anyhow::{anyhow, bail, Result};
+use fixed_decimal::FixedDecimal;
+use icu::decimal::FixedDecimalFormatter;
+use icu::locid::Locale;
 use nostr::{Event, JsonUtil, Kind, TagStandard};
 use nostrdb::Note;
 
@@ -53,4 +56,18 @@ impl<'a> Zap<'a> {
             message: req.content,
         })
     }
+}
+
+pub fn format_sats(n: f32) -> String {
+    let (div_n, suffix) = if n >= 1_000. && n < 1_000_000. {
+        (1_000., "K")
+    } else if n >= 1_000_000. {
+        (1_000_000., "M")
+    } else {
+        (1., "")
+    };
+
+    let fmt = FixedDecimalFormatter::try_new(&Locale::UND.into(), Default::default()).expect("icu");
+    let d: FixedDecimal = (n / div_n).to_string().parse().expect("fixed decimal");
+    format!("{}{}", fmt.format_to_string(&d), suffix)
 }

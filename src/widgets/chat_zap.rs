@@ -1,6 +1,6 @@
 use crate::theme::{MARGIN_DEFAULT, ROUNDING_DEFAULT, ZAP};
 use crate::widgets::Avatar;
-use crate::zap::Zap;
+use crate::zap::{format_sats, Zap};
 use eframe::emath::Align;
 use eframe::epaint::text::{LayoutJob, TextFormat, TextWrapMode};
 use eframe::epaint::Color32;
@@ -43,7 +43,7 @@ impl<'a> ChatZap<'a> {
                     job.append("zapped", 5.0, format.clone());
                     format.color = ZAP;
                     job.append(
-                        (self.zap.amount / 1000).to_string().as_str(),
+                        &format_sats((self.zap.amount / 1000) as f32),
                         5.0,
                         format.clone(),
                     );
