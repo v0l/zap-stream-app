@@ -1,5 +1,5 @@
 use crate::link::NostrLink;
-use crate::route::{RouteServices, RouteType};
+use crate::route::{image_from_cache, RouteServices, RouteType};
 use crate::stream_info::{StreamInfo, StreamStatus};
 use crate::theme::{NEUTRAL_800, NEUTRAL_900, PRIMARY, ROUNDING_DEFAULT};
 use crate::widgets::avatar::Avatar;
@@ -33,8 +33,10 @@ impl<'a> StreamEvent<'a> {
 
             let (response, painter) = ui.allocate_painter(Vec2::new(w, h), Sense::click());
 
-            let cover = if ui.is_visible() {
-                self.event.image().map(|p| services.image(p))
+            let cover = if ui.is_rect_visible(response.rect) {
+                self.event
+                    .image()
+                    .map(|p| image_from_cache(services.ctx.img_cache, ui, p))
             } else {
                 None
             };

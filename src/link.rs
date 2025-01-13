@@ -20,6 +20,15 @@ pub enum IdOrStr {
     Str(String),
 }
 
+impl IdOrStr {
+    pub fn as_bytes(&self) -> &[u8] {
+        match self {
+            IdOrStr::Id(i) => i,
+            IdOrStr::Str(s) => s.as_bytes(),
+        }
+    }
+}
+
 impl Display for IdOrStr {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -82,6 +91,16 @@ impl NostrLink {
                 author: Some(*note.pubkey()),
                 relays: vec![],
             }
+        }
+    }
+
+    pub fn profile(pubkey: &[u8; 32]) -> Self {
+        Self {
+            hrp: NostrLinkType::Profile,
+            id: IdOrStr::Id(*pubkey),
+            kind: None,
+            author: None,
+            relays: vec![],
         }
     }
 

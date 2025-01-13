@@ -53,13 +53,15 @@ impl Avatar {
     pub fn render(self, ui: &mut Ui, img_cache: &mut ImageCache) -> Response {
         let size_v = self.size.unwrap_or(40.);
         let size = Vec2::new(size_v, size_v);
-        if !ui.is_visible() {
+        if !ui.is_rect_visible(ui.cursor()) {
             return Self::placeholder(ui, size_v);
         }
         match &self.image {
-            Some(img) => image_from_cache(img_cache, ui.ctx(), img)
+            Some(img) => image_from_cache(img_cache, ui, img)
+                .max_size(size)
                 .fit_to_exact_size(size)
                 .rounding(Rounding::same(size_v))
+                .sense(Sense::click())
                 .ui(ui),
             None => Self::placeholder(ui, size_v),
         }

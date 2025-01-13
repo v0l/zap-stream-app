@@ -152,7 +152,7 @@ impl NostrWidget for StreamPage {
             .collect();
 
         if let Some(event) = events.first() {
-            if let Some(stream) = event.stream() {
+            if let Some(stream) = event.streaming() {
                 if self.player.is_none() {
                     let p = StreamPlayer::new(ui.ctx(), &stream.to_string());
                     self.player = Some(p);

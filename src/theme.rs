@@ -1,6 +1,7 @@
 use egui::{Color32, Margin};
 
 pub const FONT_SIZE: f32 = 13.0;
+pub const FONT_SIZE_SM: f32 = FONT_SIZE * 0.8;
 pub const FONT_SIZE_LG: f32 = FONT_SIZE * 1.5;
 pub const ROUNDING_DEFAULT: f32 = 12.0;
 pub const MARGIN_DEFAULT: Margin = Margin::symmetric(12., 6.);

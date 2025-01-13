@@ -7,7 +7,8 @@ use crate::theme::{
 use crate::widgets::{Button, NativeTextInput};
 use crate::zap::format_sats;
 use anyhow::{anyhow, bail};
-use egui::{vec2, Frame, Grid, Response, RichText, Stroke, Ui, Widget};
+use egui::text::{LayoutJob, TextWrapping};
+use egui::{vec2, Frame, Grid, Response, RichText, Stroke, TextFormat, TextWrapMode, Ui, Widget};
 use egui_modal::Modal;
 use egui_qr::QrCodeWidget;
 use enostr::PoolRelay;
@@ -109,10 +110,17 @@ impl<'a> ZapButton<'a> {
                     }
                     ZapState::Invoice { invoice } => {
                         if let Ok(q) = QrCodeWidget::from_data(invoice.pr.as_bytes()) {
-                            ui.add_sized(vec2(256., 256.), q);
+                            ui.vertical_centered(|ui| {
+                                ui.add_sized(vec2(256., 256.), q);
 
-                            let rt = RichText::new(&invoice.pr).code();
-                            ui.label(rt);
+                                let mut job = LayoutJob::default();
+                                job.wrap = TextWrapping::from_wrap_mode_and_width(
+                                    TextWrapMode::Truncate,
+                                    ui.available_width(),
+                                );
+                                job.append(&invoice.pr, 0.0, TextFormat::default());
+                                ui.label(job);
+                            });
                         }
                     }
                     ZapState::Error(e) => {

@@ -26,7 +26,10 @@ pub trait StreamInfo {
 
     fn host(&self) -> &[u8; 32];
 
-    fn stream(&self) -> Option<&str>;
+    fn streaming(&self) -> Option<&str>;
+
+    fn recording(&self) -> Option<&str>;
+
     /// Is the stream playable by this app
     fn can_play(&self) -> bool;
 
@@ -68,8 +71,16 @@ impl StreamInfo for Note<'_> {
         }
     }
 
-    fn stream(&self) -> Option<&str> {
+    fn streaming(&self) -> Option<&str> {
         if let Some(s) = self.get_tag_value("streaming") {
+            s.variant().str()
+        } else {
+            None
+        }
+    }
+
+    fn recording(&self) -> Option<&str> {
+        if let Some(s) = self.get_tag_value("recording") {
             s.variant().str()
         } else {
             None
@@ -78,7 +89,7 @@ impl StreamInfo for Note<'_> {
 
     /// Is the stream playable by this app
     fn can_play(&self) -> bool {
-        if let Some(stream) = self.stream() {
+        if let Some(stream) = self.streaming() {
             stream.contains(".m3u8")
         } else {
             false

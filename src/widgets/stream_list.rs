@@ -1,6 +1,7 @@
 use crate::note_view::NotesView;
 use crate::route::RouteServices;
 use crate::stream_info::StreamInfo;
+use crate::theme::MARGIN_DEFAULT;
 use crate::widgets::stream_tile::StreamEvent;
 use egui::{vec2, Frame, Grid, Margin, Response, Ui, WidgetText};
 use itertools::Itertools;
@@ -35,9 +36,8 @@ impl<'a> StreamList<'a> {
         };
 
         let grid_padding = 20.;
-        let frame_margin = 16.0;
         Frame::none()
-            .inner_margin(Margin::symmetric(frame_margin, 0.))
+            .inner_margin(MARGIN_DEFAULT)
             .show(ui, |ui| {
                 let grid_spacing_consumed = (cols - 1) as f32 * grid_padding;
                 let g_w = (ui.available_width() - grid_spacing_consumed) / cols as f32;

@@ -3,7 +3,7 @@ use crate::route::RouteServices;
 use crate::theme::{MARGIN_DEFAULT, NEUTRAL_900, ROUNDING_DEFAULT};
 use crate::widgets::NativeTextInput;
 use eframe::emath::Align;
-use egui::{Frame, Layout, Response, Sense, Ui, Widget};
+use egui::{Frame, Image, Layout, Response, Sense, Ui, Widget};
 use log::info;
 
 pub struct WriteChat {
@@ -28,8 +28,7 @@ impl WriteChat {
             .rounding(ROUNDING_DEFAULT)
             .show(ui, |ui| {
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                    if services
-                        .image_bytes("send-03.svg", logo_bytes)
+                    if Image::from_bytes("send-03.svg", logo_bytes)
                         .sense(Sense::click())
                         .ui(ui)
                         .clicked()

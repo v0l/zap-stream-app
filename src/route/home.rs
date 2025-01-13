@@ -34,7 +34,8 @@ impl NostrWidget for HomePage {
                 let events: Vec<Note> = self
                     .events
                     .iter()
-                    .map_while(|n| services.ctx.ndb.get_note_by_key(services.tx, n.key).ok())
+                    .filter_map(|n| services.ctx.ndb.get_note_by_key(services.tx, n.key).ok())
+                    .filter(|e| e.can_play())
                     .collect();
 
                 let events_live = NotesView::from_vec(
@@ -68,7 +69,14 @@ impl NostrWidget for HomePage {
                 let events_ended = NotesView::from_vec(
                     events
                         .iter()
-                        .filter(|r| matches!(r.status(), StreamStatus::Ended))
+                        .filter(|r| {
+                            matches!(r.status(), StreamStatus::Ended)
+                                && if let Some(r) = r.recording() {
+                                    r.len() > 0
+                                } else {
+                                    false
+                                }
+                        })
                         .collect(),
                 );
                 if events_ended.len() > 0 {

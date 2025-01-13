@@ -1,5 +1,6 @@
 use crate::profiles::ProfileLoader;
 use crate::route::{page, RouteAction, RouteServices, RouteType};
+use crate::theme::MARGIN_DEFAULT;
 use crate::widgets::{Header, NostrWidget};
 use eframe::epaint::{FontFamily, Margin};
 use eframe::CreationContext;
@@ -85,6 +86,7 @@ impl notedeck::App for ZapStreamApp {
                         if let Err(e) = ctx.ndb.process_event(ev) {
                             error!("Error processing event: {:?}", e);
                         }
+                        ui.ctx().request_repaint();
                     }
                     RelayMessage::Notice(m) => warn!("Notice from {}: {}", relay, m),
                 }
@@ -101,8 +103,7 @@ impl notedeck::App for ZapStreamApp {
             },
         );
 
-        let mut app_frame = egui::containers::Frame::default();
-        app_frame.inner_margin = self.frame_margin();
+        let app_frame = egui::containers::Frame::default().outer_margin(self.frame_margin());
 
         // handle app state changes
         while let Ok(r) = self.routes_rx.try_recv() {
@@ -124,6 +125,11 @@ impl notedeck::App for ZapStreamApp {
                     }
                     RouteType::LoginPage => {
                         self.widget = Box::new(page::LoginPage::new());
+                    }
+                    RouteType::ProfilePage { link } => {
+                        self.widget = Box::new(page::ProfilePage::new(
+                            link.id.as_bytes().try_into().unwrap(),
+                        ));
                     }
                     RouteType::Action { .. } => panic!("Actions!"),
                     _ => panic!("Not implemented"),

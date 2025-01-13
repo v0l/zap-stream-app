@@ -1,9 +1,9 @@
 use crate::link::NostrLink;
 use crate::services::ffmpeg_loader::FfmpegLoader;
-use crate::PollOption;
+use crate::widgets::PlaceholderRect;
 use anyhow::{anyhow, bail};
 use egui::load::SizedTexture;
-use egui::{Context, Id, Image, TextureHandle};
+use egui::{Context, Id, Image, ImageSource, TextureHandle, Ui};
 use ehttp::Response;
 use enostr::EventClientMessage;
 use lnurl::lightning_address::LightningAddress;
@@ -21,13 +21,14 @@ use std::task::Poll;
 
 mod home;
 mod login;
+mod profile;
 mod stream;
 
 pub mod page {
-    use crate::route::{home, login, stream};
-    pub use home::HomePage;
-    pub use login::LoginPage;
-    pub use stream::StreamPage;
+    pub use super::home::HomePage;
+    pub use super::login::LoginPage;
+    pub use super::profile::ProfilePage;
+    pub use super::stream::StreamPage;
 }
 
 #[derive(PartialEq)]
@@ -39,7 +40,6 @@ pub enum RouteType {
     },
     ProfilePage {
         link: NostrLink,
-        profile: Option<NoteKey>,
     },
     LoginPage,
 
@@ -117,17 +117,6 @@ impl<'a, 'ctx> RouteServices<'a, 'ctx> {
         p
     }
 
-    /// Load image from URL
-    pub fn image<'img, 'b>(&'b mut self, url: &'b str) -> Image<'img> {
-        image_from_cache(self.ctx.img_cache, &self.egui, url)
-    }
-
-    /// Load image from bytes
-    pub fn image_bytes(&self, name: &'static str, data: &'static [u8]) -> Image<'_> {
-        // TODO: loader
-        Image::from_bytes(name, data)
-    }
-
     /// Create a poll_promise fetch
     pub fn fetch(&mut self, url: &str) -> Poll<&ehttp::Result<Response>> {
         if !self.fetch.contains_key(url) {
@@ -199,14 +188,15 @@ impl<'a, 'ctx> RouteServices<'a, 'ctx> {
 }
 
 const BLACK_PIXEL: [u8; 4] = [0, 0, 0, 0];
-pub fn image_from_cache<'a>(img_cache: &mut ImageCache, ctx: &Context, url: &str) -> Image<'a> {
+
+pub fn image_from_cache<'a>(img_cache: &mut ImageCache, ui: &Ui, url: &str) -> Image<'a> {
     if let Some(promise) = img_cache.map().get(url) {
         match promise.poll() {
             Poll::Ready(Ok(t)) => Image::new(SizedTexture::from_handle(t)),
             _ => Image::from_bytes(url.to_string(), &BLACK_PIXEL),
         }
     } else {
-        let fetch = fetch_img(img_cache, ctx, url);
+        let fetch = fetch_img(img_cache, ui.ctx(), url);
         img_cache.map_mut().insert(url.to_string(), fetch);
         Image::from_bytes(url.to_string(), &BLACK_PIXEL)
     }
