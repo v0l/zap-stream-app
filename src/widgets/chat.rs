@@ -64,7 +64,7 @@ impl NostrWidget for Chat {
                                         1311 => {
                                             let profile = services.profile(ev.pubkey());
                                             ChatMessage::new(&stream, &ev, &profile)
-                                                .render(ui, services.ctx.img_cache);
+                                                .render(ui, services);
                                         }
                                         9735 => {
                                             if let Ok(zap) = Zap::from_receipt(ev) {

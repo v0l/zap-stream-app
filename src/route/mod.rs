@@ -3,7 +3,8 @@ use crate::services::ffmpeg_loader::FfmpegLoader;
 use crate::widgets::PlaceholderRect;
 use anyhow::{anyhow, bail};
 use egui::load::SizedTexture;
-use egui::{Context, Id, Image, ImageSource, TextureHandle, Ui};
+use egui::{Context, Id, Image, ImageSource, TextureHandle, Ui, Vec2};
+use egui_video::ffmpeg_rs_raw::Transcoder;
 use ehttp::Response;
 use enostr::EventClientMessage;
 use lnurl::lightning_address::LightningAddress;
@@ -187,18 +188,31 @@ impl<'a, 'ctx> RouteServices<'a, 'ctx> {
     }
 }
 
-const BLACK_PIXEL: [u8; 4] = [0, 0, 0, 0];
+const LOGO_BYTES: &[u8] = include_bytes!("../resources/logo.svg");
 
-pub fn image_from_cache<'a>(img_cache: &mut ImageCache, ui: &Ui, url: &str) -> Image<'a> {
-    if let Some(promise) = img_cache.map().get(url) {
+pub fn image_from_cache<'a>(
+    img_cache: &mut ImageCache,
+    ui: &Ui,
+    url: &str,
+    size: Option<Vec2>,
+) -> Image<'a> {
+    let cache_key = if let Some(s) = size {
+        format!("{}:{}", url, s)
+    } else {
+        url.to_string()
+    };
+    if url.len() == 0 {
+        return Image::from_bytes(cache_key, LOGO_BYTES);
+    }
+    if let Some(promise) = img_cache.map().get(&cache_key) {
         match promise.poll() {
             Poll::Ready(Ok(t)) => Image::new(SizedTexture::from_handle(t)),
-            _ => Image::from_bytes(url.to_string(), &BLACK_PIXEL),
+            _ => Image::from_bytes(url.to_string(), LOGO_BYTES),
         }
     } else {
-        let fetch = fetch_img(img_cache, ui.ctx(), url);
-        img_cache.map_mut().insert(url.to_string(), fetch);
-        Image::from_bytes(url.to_string(), &BLACK_PIXEL)
+        let fetch = fetch_img(img_cache, ui.ctx(), url, size);
+        img_cache.map_mut().insert(cache_key.clone(), fetch);
+        Image::from_bytes(cache_key, LOGO_BYTES)
     }
 }
 
@@ -206,52 +220,48 @@ fn fetch_img(
     img_cache: &ImageCache,
     ctx: &Context,
     url: &str,
+    size: Option<Vec2>,
 ) -> Promise<notedeck::Result<TextureHandle>> {
-    let k = ImageCache::key(url);
-    let dst_path = img_cache.cache_dir.join(k);
+    let name = ImageCache::key(url);
+    let dst_path = img_cache.cache_dir.join(&name);
     if dst_path.exists() {
         let ctx = ctx.clone();
-        let url = url.to_owned();
-        let dst_path = dst_path.clone();
-        Promise::spawn_blocking(move || {
+        Promise::spawn_thread("load_from_disk", move || {
             info!("Loading image from disk: {}", dst_path.display());
-            match FfmpegLoader::new().load_image(dst_path) {
-                Ok(img) => Ok(ctx.load_texture(&url, img, Default::default())),
+            match FfmpegLoader::new().load_image(dst_path, size) {
+                Ok(img) => Ok(ctx.load_texture(&name, img, Default::default())),
                 Err(e) => Err(notedeck::Error::Generic(e.to_string())),
             }
         })
     } else {
-        fetch_img_from_net(&dst_path, ctx, url)
+        let url = url.to_string();
+        let ctx = ctx.clone();
+        Promise::spawn_thread("load_from_net", move || {
+            let img = match fetch_img_from_net(&url).block_and_take() {
+                Ok(img) => img,
+                Err(e) => return Err(notedeck::Error::Generic(e.to_string())),
+            };
+            std::fs::create_dir_all(&dst_path.parent().unwrap()).unwrap();
+            std::fs::write(&dst_path, &img.bytes).unwrap();
+
+            info!("Loading image from net: {}", &url);
+            match FfmpegLoader::new().load_image(dst_path, size) {
+                Ok(img) => {
+                    ctx.request_repaint();
+                    Ok(ctx.load_texture(&name, img, Default::default()))
+                }
+                Err(e) => Err(notedeck::Error::Generic(e.to_string())),
+            }
+        })
     }
 }
 
-fn fetch_img_from_net(
-    cache_path: &Path,
-    ctx: &Context,
-    url: &str,
-) -> Promise<notedeck::Result<TextureHandle>> {
+fn fetch_img_from_net(url: &str) -> Promise<ehttp::Result<Response>> {
     let (sender, promise) = Promise::new();
     let request = ehttp::Request::get(url);
-    let ctx = ctx.clone();
-    let cloned_url = url.to_owned();
-    let cache_path = cache_path.to_owned();
+    info!("Downloaded image: {}", url);
     ehttp::fetch(request, move |response| {
-        let handle = response
-            .and_then(|img| {
-                std::fs::create_dir_all(cache_path.parent().unwrap()).unwrap();
-                std::fs::write(&cache_path, &img.bytes).unwrap();
-                info!("Loading image from net: {}", cloned_url);
-                let img_loaded = FfmpegLoader::new()
-                    .load_image(cache_path)
-                    .map_err(|e| e.to_string())?;
-
-                Ok(ctx.load_texture(&cloned_url, img_loaded, Default::default()))
-            })
-            .map_err(notedeck::Error::Generic);
-
-        sender.send(handle);
-        ctx.request_repaint();
+        sender.send(response);
     });
-
     promise
 }

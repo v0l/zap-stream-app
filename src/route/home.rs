@@ -23,7 +23,7 @@ impl HomePage {
     }
 
     fn get_filters() -> Vec<Filter> {
-        vec![Filter::new().kinds([30_311]).limit(100).build()]
+        vec![Filter::new().kinds([30_311, 30_313]).limit(100).build()]
     }
 }
 

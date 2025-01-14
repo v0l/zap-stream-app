@@ -1,14 +1,14 @@
 use crate::link::NostrLink;
 use crate::route::RouteServices;
-use crate::stream_info::StreamInfo;
 use crate::theme::{MARGIN_DEFAULT, NEUTRAL_800, ROUNDING_DEFAULT};
 use crate::widgets::{
     sub_or_poll, Chat, NostrWidget, PlaceholderRect, StreamPlayer, StreamTitle, WriteChat,
 };
-use egui::{vec2, Align, Frame, Layout, Response, Stroke, Ui, Vec2, Widget};
+use egui::{vec2, Align, Frame, Layout, Response, ScrollArea, Stroke, Ui, Vec2, Widget};
 use nostrdb::{Filter, Note};
 
 use crate::note_ref::NoteRef;
+use crate::stream_info::StreamInfo;
 use crate::sub::SubRef;
 use std::borrow::Borrow;
 use std::collections::HashSet;
@@ -95,49 +95,51 @@ impl StreamPage {
         let video_width = ui.available_width() - chat_w;
         let video_height = max_h.min((video_width / 16.0) * 9.0);
 
-        ui.with_layout(
-            Layout::left_to_right(Align::TOP).with_main_justify(true),
-            |ui| {
-                ui.vertical(|ui| {
-                    ui.allocate_ui(vec2(video_width, video_height), |ui| {
+        ui.horizontal(|ui| {
+            ui.allocate_ui_with_layout(
+                vec2(video_width, max_h),
+                Layout::top_down_justified(Align::Min),
+                |ui| {
+                    ScrollArea::vertical().show(ui, |ui| {
                         if let Some(player) = &mut self.player {
-                            player.ui(ui)
+                            ui.add_sized(vec2(video_width, video_height), player);
                         } else {
-                            ui.add(PlaceholderRect)
+                            ui.add_sized(vec2(video_width, video_height), PlaceholderRect);
                         }
+
+                        ui.add_space(10.);
+                        StreamTitle::new(event).render(ui, services);
                     });
-                    ui.add_space(10.);
-                    StreamTitle::new(event).render(ui, services);
-                });
-                ui.allocate_ui_with_layout(
-                    vec2(chat_w, max_h),
-                    Layout::top_down_justified(Align::Min),
-                    |ui| {
-                        Frame::none()
-                            .stroke(Stroke::new(1.0, NEUTRAL_800))
-                            .outer_margin(MARGIN_DEFAULT)
-                            .rounding(ROUNDING_DEFAULT)
-                            .show(ui, |ui| {
-                                let chat_h = 60.0;
-                                if let Some(c) = self.chat.as_mut() {
-                                    ui.allocate_ui(
-                                        vec2(ui.available_width(), ui.available_height() - chat_h),
-                                        |ui| {
-                                            c.render(ui, services);
-                                        },
-                                    );
-                                } else {
-                                    ui.label("Loading..");
-                                }
-                                if ui.available_height().is_finite() {
-                                    ui.add_space(ui.available_height() - chat_h);
-                                }
-                                self.new_msg.render(ui, services);
-                            });
-                    },
-                );
-            },
-        );
+                },
+            );
+            ui.allocate_ui_with_layout(
+                vec2(chat_w, max_h),
+                Layout::top_down_justified(Align::Min),
+                |ui| {
+                    Frame::none()
+                        .stroke(Stroke::new(1.0, NEUTRAL_800))
+                        .outer_margin(MARGIN_DEFAULT)
+                        .rounding(ROUNDING_DEFAULT)
+                        .show(ui, |ui| {
+                            let chat_h = 60.0;
+                            if let Some(c) = self.chat.as_mut() {
+                                ui.allocate_ui(
+                                    vec2(ui.available_width(), ui.available_height() - chat_h),
+                                    |ui| {
+                                        c.render(ui, services);
+                                    },
+                                );
+                            } else {
+                                ui.label("Loading..");
+                            }
+                            if ui.available_height().is_finite() {
+                                ui.add_space(ui.available_height() - chat_h);
+                            }
+                            self.new_msg.render(ui, services);
+                        });
+                },
+            );
+        });
 
         ui.response()
     }
@@ -152,11 +154,16 @@ impl NostrWidget for StreamPage {
             .collect();
 
         if let Some(event) = events.first() {
-            if let Some(stream) = event.streaming() {
-                if self.player.is_none() {
-                    let p = StreamPlayer::new(ui.ctx(), &stream.to_string());
-                    self.player = Some(p);
-                }
+            if self.player.is_none() {
+                match event.kind() {
+                    30_311 => {
+                        if let Some(u) = event.streaming().or(event.recording()) {
+                            let p = StreamPlayer::new(ui.ctx(), &u.to_string());
+                            self.player = Some(p);
+                        }
+                    }
+                    _ => {}
+                };
             }
 
             if self.chat.is_none() {

@@ -89,6 +89,9 @@ impl StreamInfo for Note<'_> {
 
     /// Is the stream playable by this app
     fn can_play(&self) -> bool {
+        if self.kind() == 30_313 {
+            return true; // n94-stream can always be played
+        }
         if let Some(stream) = self.streaming() {
             stream.contains(".m3u8")
         } else {

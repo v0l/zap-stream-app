@@ -18,8 +18,8 @@ bech32 = "0.11.0"
 anyhow = "^1.0.91"
 itertools = "0.14.0"
 serde = { version = "1.0.214", features = ["derive"] }
-directories = "5.0.1"
-egui-video = { git = "https://github.com/v0l/egui-video.git", rev = "d2ea3b4db21eb870a207db19e4cd21c7d1d24836" }
+directories = "6.0.0"
+egui-video = { git = "https://github.com/v0l/egui-video.git", rev = "11db7d0c30070529a36bfb050844cdb75c32902b" }
 egui_qr = { git = "https://git.v0l.io/Kieran/egui_qr.git", rev = "f9cf52b7eae353fa9e59ed0358151211d48824d1" }
 
 # notedeck stuff

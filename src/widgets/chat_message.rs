@@ -1,3 +1,5 @@
+use crate::link::NostrLink;
+use crate::route::{RouteServices, RouteType};
 use crate::stream_info::StreamInfo;
 use crate::theme::{NEUTRAL_500, PRIMARY};
 use crate::widgets::Avatar;
@@ -5,7 +7,6 @@ use eframe::epaint::text::TextWrapMode;
 use egui::text::LayoutJob;
 use egui::{Align, Color32, Label, Response, TextFormat, Ui};
 use nostrdb::{NdbProfile, Note};
-use notedeck::ImageCache;
 
 pub struct ChatMessage<'a> {
     stream: &'a Note<'a>,
@@ -26,7 +27,7 @@ impl<'a> ChatMessage<'a> {
         }
     }
 
-    pub fn render(self, ui: &mut Ui, img_cache: &mut ImageCache) -> Response {
+    pub fn render(self, ui: &mut Ui, services: &mut RouteServices) -> Response {
         ui.horizontal_wrapped(|ui| {
             let mut job = LayoutJob::default();
             // TODO: avoid this somehow
@@ -48,9 +49,15 @@ impl<'a> ChatMessage<'a> {
             format.color = Color32::WHITE;
             job.append(self.ev.content(), 5.0, format.clone());
 
-            Avatar::from_profile(self.profile)
+            if Avatar::from_profile(self.profile)
                 .size(24.)
-                .render(ui, img_cache);
+                .render(ui, services.ctx.img_cache)
+                .clicked()
+            {
+                services.navigate(RouteType::ProfilePage {
+                    link: NostrLink::profile(self.ev.pubkey()),
+                })
+            }
             ui.add(Label::new(job).wrap_mode(TextWrapMode::Wrap));
 
             // consume reset of space

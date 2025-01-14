@@ -1,5 +1,6 @@
 use crate::route::image_from_cache;
-use egui::{vec2, Color32, Pos2, Response, Rounding, Sense, Ui, Vec2, Widget};
+use crate::theme::NEUTRAL_800;
+use egui::{vec2, Response, Rounding, Sense, Ui, Vec2, Widget};
 use nostrdb::{Ndb, NdbProfile, Transaction};
 use notedeck::ImageCache;
 
@@ -42,11 +43,8 @@ impl Avatar {
 
     fn placeholder(ui: &mut Ui, size: f32) -> Response {
         let (response, painter) = ui.allocate_painter(vec2(size, size), Sense::click());
-        painter.circle_filled(
-            Pos2::new(size / 2., size / 2.),
-            size / 2.,
-            Color32::from_rgb(200, 200, 200),
-        );
+        let pos = response.rect.min + vec2(size / 2., size / 2.);
+        painter.circle_filled(pos, size / 2., NEUTRAL_800);
         response
     }
 
@@ -57,9 +55,7 @@ impl Avatar {
             return Self::placeholder(ui, size_v);
         }
         match &self.image {
-            Some(img) => image_from_cache(img_cache, ui, img)
-                .max_size(size)
-                .fit_to_exact_size(size)
+            Some(img) => image_from_cache(img_cache, ui, img, Some(size))
                 .rounding(Rounding::same(size_v))
                 .sense(Sense::click())
                 .ui(ui),

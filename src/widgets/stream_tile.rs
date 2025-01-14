@@ -5,10 +5,9 @@ use crate::theme::{NEUTRAL_800, NEUTRAL_900, PRIMARY, ROUNDING_DEFAULT};
 use crate::widgets::avatar::Avatar;
 use eframe::epaint::{Rounding, Vec2};
 use egui::epaint::RectShape;
-use egui::load::TexturePoll;
 use egui::{
-    vec2, Color32, CursorIcon, FontId, Label, Pos2, Rect, Response, RichText, Sense, TextWrapMode,
-    Ui,
+    vec2, Color32, CursorIcon, FontId, ImageSource, Label, Pos2, Rect, Response, RichText, Sense,
+    TextWrapMode, Ui,
 };
 use nostrdb::Note;
 
@@ -34,33 +33,27 @@ impl<'a> StreamEvent<'a> {
             let (response, painter) = ui.allocate_painter(Vec2::new(w, h), Sense::click());
 
             let cover = if ui.is_rect_visible(response.rect) {
-                self.event
-                    .image()
-                    .map(|p| image_from_cache(services.ctx.img_cache, ui, p))
+                self.event.image().map(|p| {
+                    image_from_cache(services.ctx.img_cache, ui, p, Some(Vec2::new(w, h)))
+                        .rounding(ROUNDING_DEFAULT)
+                })
             } else {
                 None
             };
 
-            if let Some(cover) = cover.map(|c| {
-                c.rounding(Rounding::same(12.))
-                    .load_for_size(painter.ctx(), Vec2::new(w, h))
-            }) {
-                match cover {
-                    Ok(TexturePoll::Ready { texture }) => {
-                        painter.add(RectShape {
-                            rect: response.rect,
-                            rounding: Rounding::same(ROUNDING_DEFAULT),
-                            fill: Color32::WHITE,
-                            stroke: Default::default(),
-                            blur_width: 0.0,
-                            fill_texture_id: texture.id,
-                            uv: Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(1.0, 1.0)),
-                        });
-                    }
-                    _ => {
-                        painter.rect_filled(response.rect, ROUNDING_DEFAULT, NEUTRAL_800);
-                    }
-                }
+            if let Some(cover) = cover {
+                painter.add(RectShape {
+                    rect: response.rect,
+                    rounding: Rounding::same(ROUNDING_DEFAULT),
+                    fill: Color32::WHITE,
+                    stroke: Default::default(),
+                    blur_width: 0.0,
+                    fill_texture_id: match cover.source(ui.ctx()) {
+                        ImageSource::Texture(t) => t.id,
+                        _ => Default::default(),
+                    },
+                    uv: Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(1.0, 1.0)),
+                });
             } else {
                 painter.rect_filled(response.rect, ROUNDING_DEFAULT, NEUTRAL_800);
             }

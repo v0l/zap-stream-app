@@ -2,7 +2,7 @@ use anyhow::Result;
 use directories::ProjectDirs;
 use eframe::Renderer;
 use egui::{Vec2, ViewportBuilder};
-use log::error;
+use log::{error, info};
 use zap_stream_app::app::ZapStreamApp;
 
 #[tokio::main]
@@ -13,11 +13,12 @@ async fn main() -> Result<()> {
     options.viewport = ViewportBuilder::default().with_inner_size(Vec2::new(1300., 900.));
     options.renderer = Renderer::Glow;
 
-    let data_path = ProjectDirs::from("stream", "zap", "app")
+    let data_path = ProjectDirs::from("stream", "zap", "zap_stream_app")
         .unwrap()
-        .config_dir()
+        .data_dir()
         .to_path_buf();
 
+    info!("Data path: {}", data_path.display());
     if let Err(e) = eframe::run_native(
         "zap.stream",
         options,

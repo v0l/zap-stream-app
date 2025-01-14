@@ -62,6 +62,12 @@ impl ZapStreamApp {
             .insert(FontFamily::Proportional, vec!["Outfit".to_string()]);
         cc.egui_ctx.set_fonts(fd);
 
+        // ffmpeg log redirect
+        unsafe {
+            egui_video::ffmpeg_sys_the_third::av_log_set_callback(Some(
+                egui_video::ffmpeg_rs_raw::av_log_redirect,
+            ));
+        }
         let (tx, rx) = mpsc::channel();
         Self {
             current: RouteType::HomePage,
@@ -102,6 +108,8 @@ impl notedeck::App for ZapStreamApp {
                 ..Default::default()
             },
         );
+
+        //ui.ctx().set_debug_on_hover(true);
 
         let app_frame = egui::containers::Frame::default().outer_margin(self.frame_margin());
 
