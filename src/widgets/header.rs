@@ -28,7 +28,7 @@ impl Header {
                     Layout::left_to_right(Align::Center),
                     |ui| {
                         ui.style_mut().spacing.item_spacing.x = 16.;
-                        if Image::from_bytes("logo.svg", logo_bytes)
+                        if Image::from_bytes("header_logo.svg", logo_bytes)
                             .max_height(24.)
                             .sense(Sense::click())
                             .ui(ui)

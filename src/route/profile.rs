@@ -35,14 +35,16 @@ impl NostrWidget for ProfilePage {
                     ui.spacing_mut().item_spacing.y = 8.0;
 
                     if let Some(banner) = profile.map(|p| p.banner()).flatten() {
-                        image_from_cache(
+                        if let Some(img) = image_from_cache(
                             &mut services.ctx.img_cache,
                             ui,
                             banner,
                             Some(vec2(ui.available_width(), 360.0)),
-                        )
-                        .rounding(ROUNDING_DEFAULT)
-                        .ui(ui);
+                        ) {
+                            img.rounding(ROUNDING_DEFAULT).ui(ui);
+                        } else {
+                            PlaceholderRect.ui(ui);
+                        }
                     } else {
                         ui.add(PlaceholderRect);
                     }

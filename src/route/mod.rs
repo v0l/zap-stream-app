@@ -3,7 +3,7 @@ use crate::services::ffmpeg_loader::FfmpegLoader;
 use crate::widgets::PlaceholderRect;
 use anyhow::{anyhow, bail};
 use egui::load::SizedTexture;
-use egui::{Context, Id, Image, ImageSource, TextureHandle, Ui, Vec2};
+use egui::{vec2, Context, Id, Image, ImageSource, TextureHandle, Ui, Vec2};
 use egui_video::ffmpeg_rs_raw::Transcoder;
 use ehttp::Response;
 use enostr::EventClientMessage;
@@ -195,24 +195,24 @@ pub fn image_from_cache<'a>(
     ui: &Ui,
     url: &str,
     size: Option<Vec2>,
-) -> Image<'a> {
+) -> Option<Image<'a>> {
+    if url.len() == 0 {
+        return None;
+    }
     let cache_key = if let Some(s) = size {
         format!("{}:{}", url, s)
     } else {
         url.to_string()
     };
-    if url.len() == 0 {
-        return Image::from_bytes(cache_key, LOGO_BYTES);
-    }
     if let Some(promise) = img_cache.map().get(&cache_key) {
         match promise.poll() {
-            Poll::Ready(Ok(t)) => Image::new(SizedTexture::from_handle(t)),
-            _ => Image::from_bytes(url.to_string(), LOGO_BYTES),
+            Poll::Ready(Ok(t)) => Some(Image::new(SizedTexture::from_handle(t))),
+            _ => None,
         }
     } else {
         let fetch = fetch_img(img_cache, ui.ctx(), url, size);
         img_cache.map_mut().insert(cache_key.clone(), fetch);
-        Image::from_bytes(cache_key, LOGO_BYTES)
+        None
     }
 }
 
@@ -229,7 +229,11 @@ fn fetch_img(
         Promise::spawn_thread("load_from_disk", move || {
             info!("Loading image from disk: {}", dst_path.display());
             match FfmpegLoader::new().load_image(dst_path, size) {
-                Ok(img) => Ok(ctx.load_texture(&name, img, Default::default())),
+                Ok(img) => {
+                    ctx.request_repaint();
+                    ctx.forget_image(&name);
+                    Ok(ctx.load_texture(&name, img, Default::default()))
+                }
                 Err(e) => Err(notedeck::Error::Generic(e.to_string())),
             }
         })
@@ -248,6 +252,7 @@ fn fetch_img(
             match FfmpegLoader::new().load_image(dst_path, size) {
                 Ok(img) => {
                     ctx.request_repaint();
+                    ctx.forget_image(&name);
                     Ok(ctx.load_texture(&name, img, Default::default()))
                 }
                 Err(e) => Err(notedeck::Error::Generic(e.to_string())),

@@ -33,10 +33,12 @@ impl<'a> StreamEvent<'a> {
             let (response, painter) = ui.allocate_painter(Vec2::new(w, h), Sense::click());
 
             let cover = if ui.is_rect_visible(response.rect) {
-                self.event.image().map(|p| {
-                    image_from_cache(services.ctx.img_cache, ui, p, Some(Vec2::new(w, h)))
-                        .rounding(ROUNDING_DEFAULT)
-                })
+                self.event
+                    .image()
+                    .and_then(|p| {
+                        image_from_cache(services.ctx.img_cache, ui, p, Some(Vec2::new(w, h)))
+                    })
+                    .map(|i| i.rounding(ROUNDING_DEFAULT))
             } else {
                 None
             };

@@ -54,8 +54,11 @@ impl Avatar {
         if !ui.is_rect_visible(ui.cursor()) {
             return Self::placeholder(ui, size_v);
         }
-        match &self.image {
-            Some(img) => image_from_cache(img_cache, ui, img, Some(size))
+        match self
+            .image
+            .and_then(|i| image_from_cache(img_cache, ui, &i, Some(size)))
+        {
+            Some(img) => img
                 .rounding(Rounding::same(size_v))
                 .sense(Sense::click())
                 .ui(ui),
