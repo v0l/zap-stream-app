@@ -1,17 +1,18 @@
 use anyhow::Result;
 use directories::ProjectDirs;
-use eframe::Renderer;
 use egui::{Vec2, ViewportBuilder};
 use log::{error, info};
+use notedeck::Notedeck;
 use zap_stream_app::app::ZapStreamApp;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     pretty_env_logger::init();
 
-    let mut options = eframe::NativeOptions::default();
-    options.viewport = ViewportBuilder::default().with_inner_size(Vec2::new(1300., 900.));
-    options.renderer = Renderer::Glow;
+    let options = eframe::NativeOptions {
+        viewport: ViewportBuilder::default().with_inner_size(Vec2::new(1300., 900.)),
+        ..Default::default()
+    };
 
     let data_path = ProjectDirs::from("stream", "zap", "zap_stream_app")
         .unwrap()
@@ -24,12 +25,9 @@ async fn main() -> Result<()> {
         options,
         Box::new(move |cc| {
             let args: Vec<String> = std::env::args().collect();
-            let mut notedeck =
-                notedeck_chrome::Notedeck::new(&cc.egui_ctx, data_path.clone(), &args);
-
-            let app = ZapStreamApp::new(cc);
-            notedeck.add_app(app);
-
+            let mut notedeck = Notedeck::init(&cc.egui_ctx, data_path.clone(), &args);
+            notedeck.setup(&cc.egui_ctx);
+            notedeck.set_app(ZapStreamApp::new(cc.wgpu_render_state.clone()));
             Ok(Box::new(notedeck))
         }),
     ) {

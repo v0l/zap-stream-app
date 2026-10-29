@@ -2,7 +2,7 @@ use crate::link::NostrLink;
 use crate::route::RouteServices;
 use crate::theme::{MARGIN_DEFAULT, NEUTRAL_900, ROUNDING_DEFAULT};
 use crate::widgets::NativeTextInput;
-use eframe::emath::Align;
+use egui::emath::Align;
 use egui::{Frame, Image, Layout, Response, Sense, Ui, Widget};
 use log::info;
 
@@ -21,11 +21,11 @@ impl WriteChat {
 
     pub fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_, '_>) -> Response {
         let logo_bytes = include_bytes!("../resources/send-03.svg");
-        Frame::none()
+        Frame::new()
             .inner_margin(MARGIN_DEFAULT)
             .outer_margin(MARGIN_DEFAULT)
             .fill(NEUTRAL_900)
-            .rounding(ROUNDING_DEFAULT)
+            .corner_radius(ROUNDING_DEFAULT)
             .show(ui, |ui| {
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                     if Image::from_bytes("send-03.svg", logo_bytes)

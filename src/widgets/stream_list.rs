@@ -3,7 +3,7 @@ use crate::route::RouteServices;
 use crate::stream_info::StreamInfo;
 use crate::theme::MARGIN_DEFAULT;
 use crate::widgets::stream_tile::StreamEvent;
-use egui::{vec2, Frame, Grid, Margin, Response, Ui, WidgetText};
+use egui::{vec2, Frame, Grid, Response, Ui, WidgetText};
 use itertools::Itertools;
 
 pub struct StreamList<'a> {
@@ -36,7 +36,7 @@ impl<'a> StreamList<'a> {
         };
 
         let grid_padding = 20.;
-        Frame::none()
+        Frame::new()
             .inner_margin(MARGIN_DEFAULT)
             .show(ui, |ui| {
                 let grid_spacing_consumed = (cols - 1) as f32 * grid_padding;

@@ -1,8 +1,8 @@
 use crate::route::image_from_cache;
 use crate::theme::NEUTRAL_800;
-use egui::{vec2, Response, Rounding, Sense, Ui, Vec2, Widget};
+use egui::{vec2, Response, Sense, Ui, Vec2, Widget};
 use nostrdb::{Ndb, NdbProfile, Transaction};
-use notedeck::ImageCache;
+use notedeck::AppContext;
 
 pub struct Avatar {
     image: Option<String>,
@@ -48,7 +48,7 @@ impl Avatar {
         response
     }
 
-    pub fn render(self, ui: &mut Ui, img_cache: &mut ImageCache) -> Response {
+    pub fn render(self, ui: &mut Ui, ctx: &mut AppContext<'_>) -> Response {
         let size_v = self.size.unwrap_or(40.);
         let size = Vec2::new(size_v, size_v);
         if !ui.is_rect_visible(ui.cursor()) {
@@ -56,10 +56,12 @@ impl Avatar {
         }
         match self
             .image
-            .and_then(|i| image_from_cache(img_cache, ui, &i, Some(size)))
+            .and_then(|i| {
+                image_from_cache(ctx.img_cache, ctx.media_jobs.sender(), ui, &i, Some(size))
+            })
         {
             Some(img) => img
-                .rounding(Rounding::same(size_v))
+                .corner_radius(size_v / 2.0)
                 .sense(Sense::click())
                 .ui(ui),
             None => Self::placeholder(ui, size_v),

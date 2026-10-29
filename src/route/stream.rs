@@ -15,6 +15,7 @@ use std::collections::HashSet;
 
 pub struct StreamPage {
     link: NostrLink,
+    render_state: Option<egui_wgpu::RenderState>,
     player: Option<StreamPlayer>,
     chat: Option<Chat>,
     new_msg: WriteChat,
@@ -24,8 +25,9 @@ pub struct StreamPage {
 }
 
 impl StreamPage {
-    pub fn new_from_link(link: NostrLink) -> Self {
+    pub fn new_from_link(link: NostrLink, render_state: Option<egui_wgpu::RenderState>) -> Self {
         Self {
+            render_state,
             new_msg: WriteChat::new(link.clone()),
             link,
             chat: None,
@@ -116,10 +118,10 @@ impl StreamPage {
                 vec2(chat_w, max_h),
                 Layout::top_down_justified(Align::Min),
                 |ui| {
-                    Frame::none()
+                    Frame::new()
                         .stroke(Stroke::new(1.0, NEUTRAL_800))
                         .outer_margin(MARGIN_DEFAULT)
-                        .rounding(ROUNDING_DEFAULT)
+                        .corner_radius(ROUNDING_DEFAULT)
                         .show(ui, |ui| {
                             let chat_h = 60.0;
                             if let Some(c) = self.chat.as_mut() {
@@ -158,7 +160,7 @@ impl NostrWidget for StreamPage {
                 match event.kind() {
                     30_311 => {
                         if let Some(u) = event.streaming().or(event.recording()) {
-                            let p = StreamPlayer::new(ui.ctx(), &u.to_string());
+                            let p = StreamPlayer::new(self.render_state.as_ref(), &u.to_string());
                             self.player = Some(p);
                         }
                     }
@@ -185,9 +187,8 @@ impl NostrWidget for StreamPage {
     fn update(&mut self, services: &mut RouteServices<'_, '_>) -> anyhow::Result<()> {
         let filters = self.get_filters();
         sub_or_poll(
-            services.ctx.ndb,
+            services.ctx,
             services.tx,
-            services.ctx.pool,
             &mut self.events,
             &mut self.sub,
             filters,

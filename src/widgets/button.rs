@@ -36,10 +36,10 @@ impl Button {
     where
         F: FnOnce(&mut Ui) -> Response,
     {
-        let r = Frame::none()
+        let r = Frame::new()
             .inner_margin(MARGIN_DEFAULT)
             .fill(self.color)
-            .rounding(ROUNDING_DEFAULT)
+            .corner_radius(ROUNDING_DEFAULT)
             .multiply_with_opacity(if self.disabled { 0.5 } else { 1.0 })
             .show(ui, add_contents);
 

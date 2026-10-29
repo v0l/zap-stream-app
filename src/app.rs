@@ -1,17 +1,16 @@
 use crate::profiles::ProfileLoader;
 use crate::route::{page, RouteAction, RouteServices, RouteType};
-use crate::theme::MARGIN_DEFAULT;
 use crate::widgets::{Header, NostrWidget};
-use eframe::epaint::{FontFamily, Margin};
-use eframe::CreationContext;
+use egui::epaint::{FontFamily, Margin};
 use egui::{Color32, FontData, FontDefinitions, Theme, Ui, Visuals};
-use enostr::{PoolEvent, RelayEvent, RelayMessage};
-use log::{error, info, warn};
+use log::{error, info};
 use nostrdb::{Filter, Transaction};
-use notedeck::AppContext;
+use notedeck::{
+    AppContext, AppResponse, ScopedSubIdentity, SubConfig, SubKey, SubOwnerKey,
+};
 use poll_promise::Promise;
 use std::collections::HashMap;
-use std::sync::mpsc;
+use std::sync::{mpsc, Arc};
 
 pub struct ZapStreamApp {
     current: RouteType,
@@ -24,50 +23,13 @@ pub struct ZapStreamApp {
     widget: Box<dyn NostrWidget>,
     profiles: ProfileLoader,
     fetch: HashMap<String, Promise<ehttp::Result<ehttp::Response>>>,
+    fonts_set: bool,
+    render_state: Option<egui_wgpu::RenderState>,
 }
 
-#[cfg(target_os = "android")]
 impl ZapStreamApp {
-    pub fn new(cc: &CreationContext, app: android_activity::AndroidApp) -> Self {
-        let mut fd = FontDefinitions::default();
-        fd.font_data.insert(
-            "Outfit".to_string(),
-            FontData::from_static(include_bytes!("../assets/Outfit-Light.ttf")),
-        );
-        fd.families
-            .insert(FontFamily::Proportional, vec!["Outfit".to_string()]);
-        cc.egui_ctx.set_fonts(fd);
-
-        let (tx, rx) = mpsc::channel();
-        Self {
-            current: RouteType::HomePage,
-            widget: Box::new(page::HomePage::new()),
-            profiles: ProfileLoader::new(),
-            routes_tx: tx,
-            routes_rx: rx,
-            app,
-        }
-    }
-}
-
-#[cfg(not(target_os = "android"))]
-impl ZapStreamApp {
-    pub fn new(cc: &CreationContext) -> Self {
-        let mut fd = FontDefinitions::default();
-        fd.font_data.insert(
-            "Outfit".to_string(),
-            FontData::from_static(include_bytes!("../assets/Outfit-Light.ttf")),
-        );
-        fd.families
-            .insert(FontFamily::Proportional, vec!["Outfit".to_string()]);
-        cc.egui_ctx.set_fonts(fd);
-
-        // ffmpeg log redirect
-        unsafe {
-            egui_video::ffmpeg_sys_the_third::av_log_set_callback(Some(
-                egui_video::ffmpeg_rs_raw::av_log_redirect,
-            ));
-        }
+    #[cfg(target_os = "android")]
+    pub fn new(app: android_activity::AndroidApp, render_state: Option<egui_wgpu::RenderState>) -> Self {
         let (tx, rx) = mpsc::channel();
         Self {
             current: RouteType::HomePage,
@@ -76,51 +38,84 @@ impl ZapStreamApp {
             routes_tx: tx,
             routes_rx: rx,
             fetch: HashMap::new(),
+            fonts_set: false,
+            render_state,
+            app,
         }
+    }
+
+    #[cfg(not(target_os = "android"))]
+    pub fn new(render_state: Option<egui_wgpu::RenderState>) -> Self {
+        Self::base(render_state)
+    }
+
+    #[cfg(not(target_os = "android"))]
+    fn base(render_state: Option<egui_wgpu::RenderState>) -> Self {
+        let (tx, rx) = mpsc::channel();
+        Self {
+            current: RouteType::HomePage,
+            widget: Box::new(page::HomePage::new()),
+            profiles: ProfileLoader::new(),
+            routes_tx: tx,
+            routes_rx: rx,
+            fetch: HashMap::new(),
+            fonts_set: false,
+            render_state,
+        }
+    }
+
+    fn setup_fonts(&mut self, ctx: &egui::Context) {
+        if self.fonts_set {
+            return;
+        }
+        self.fonts_set = true;
+        let mut fd = FontDefinitions::default();
+        fd.font_data.insert(
+            "Outfit".to_string(),
+            Arc::new(FontData::from_static(include_bytes!(
+                "../assets/Outfit-Light.ttf"
+            ))),
+        );
+        fd.families
+            .insert(FontFamily::Proportional, vec!["Outfit".to_string()]);
+        ctx.set_fonts(fd);
     }
 }
 
-impl notedeck::App for ZapStreamApp {
-    fn update(&mut self, ctx: &mut AppContext<'_>, ui: &mut Ui) {
-        ctx.accounts.update(ctx.ndb, ctx.pool, ui.ctx());
-        while let Some(PoolEvent { event, relay }) = ctx.pool.try_recv() {
-            if let RelayEvent::Message(msg) = (&event).into() {
-                match msg {
-                    RelayMessage::OK(_) => {}
-                    RelayMessage::Eose(_) => {}
-                    RelayMessage::Event(_sub, ev) => {
-                        if let Err(e) = ctx.ndb.process_event(ev) {
-                            error!("Error processing event: {:?}", e);
-                        }
-                        ui.ctx().request_repaint();
-                    }
-                    RelayMessage::Notice(m) => warn!("Notice from {}: {}", relay, m),
-                }
-            }
-        }
+fn profiles_sub_identity() -> ScopedSubIdentity {
+    ScopedSubIdentity::account(
+        SubOwnerKey::new("zap-stream-profiles"),
+        SubKey::new("profiles"),
+    )
+}
 
-        // reset theme
+impl notedeck::App for ZapStreamApp {
+    fn render(&mut self, ctx: &mut AppContext<'_>, ui: &mut Ui) -> AppResponse {
+        self.setup_fonts(ui.ctx());
+
         ui.ctx().set_visuals_of(
             Theme::Dark,
             Visuals {
                 panel_fill: Color32::BLACK,
                 override_text_color: Some(Color32::WHITE),
-                ..Default::default()
+                ..Visuals::dark()
             },
         );
 
-        //ui.ctx().set_debug_on_hover(true);
+        let released = crate::sub::take_released();
+        if !released.is_empty() {
+            let mut api = ctx.remote.scoped_subs(ctx.accounts);
+            for owner in released {
+                api.drop_owner(owner);
+            }
+        }
 
-        let app_frame = egui::containers::Frame::default().outer_margin(self.frame_margin());
-
-        // handle app state changes
         while let Ok(r) = self.routes_rx.try_recv() {
             if let RouteType::Action(a) = r {
                 match a {
                     RouteAction::DemandProfile(p) => {
                         self.profiles.demand(p);
                     }
-                    _ => info!("Not implemented"),
                 }
             } else {
                 self.current = r;
@@ -129,7 +124,10 @@ impl notedeck::App for ZapStreamApp {
                         self.widget = Box::new(page::HomePage::new());
                     }
                     RouteType::EventPage { link, .. } => {
-                        self.widget = Box::new(page::StreamPage::new_from_link(link.clone()));
+                        self.widget = Box::new(page::StreamPage::new_from_link(
+                            link.clone(),
+                            self.render_state.clone(),
+                        ));
                     }
                     RouteType::LoginPage => {
                         self.widget = Box::new(page::LoginPage::new());
@@ -139,19 +137,20 @@ impl notedeck::App for ZapStreamApp {
                             link.id.as_bytes().try_into().unwrap(),
                         ));
                     }
-                    RouteType::Action { .. } => panic!("Actions!"),
-                    _ => panic!("Not implemented"),
+                    RouteType::Action(_) => unreachable!(),
                 }
             }
         }
+
+        let app_frame = egui::containers::Frame::default().outer_margin(self.frame_margin());
+        let egui_ctx = ui.ctx().clone();
         egui::CentralPanel::default()
             .frame(app_frame)
-            .show(ui.ctx(), |ui| {
+            .show(ui, |ui| {
                 let tx = Transaction::new(ctx.ndb).expect("transaction");
-                // display app
                 ui.vertical(|ui| {
                     let mut svc = RouteServices::new(
-                        ui.ctx().clone(),
+                        egui_ctx,
                         &tx,
                         ctx,
                         self.routes_tx.clone(),
@@ -162,18 +161,24 @@ impl notedeck::App for ZapStreamApp {
                         error!("{}", e);
                     }
                     self.widget.render(ui, &mut svc);
-                })
-                .response
+                });
             });
 
         let profiles = self.profiles.next();
         if !profiles.is_empty() {
             info!("Profiles: {:?}", profiles);
-            ctx.pool.subscribe(
-                "profiles".to_string(),
-                vec![Filter::new().kinds([0]).authors(&profiles).build()],
-            );
+            let config = SubConfig::builder(vec![Filter::new()
+                .kinds([0])
+                .authors(&profiles)
+                .build()])
+            .accounts_read_important()
+            .build();
+            ctx.remote
+                .scoped_subs(ctx.accounts)
+                .set_sub(profiles_sub_identity(), config);
         }
+
+        AppResponse::none()
     }
 }
 
@@ -192,13 +197,13 @@ impl ZapStreamApp {
             let c_rect = self.app.content_rect();
             let dpi = self.app.config().density().unwrap_or(160);
             let dpi_scale = dpi as f32 / 160.0;
-            // TODO: this calc is weird but seems to work on my phone
+            let to_i8 = |v: f32| v.round().clamp(0.0, 127.0) as i8;
             Margin {
-                bottom: (h - c_rect.bottom) as f32,
-                left: c_rect.left as f32,
-                right: (w - c_rect.right) as f32,
-                top: (c_rect.top - (h - c_rect.bottom)) as f32,
-            } / dpi_scale
+                bottom: to_i8((h - c_rect.bottom) as f32 / dpi_scale),
+                left: to_i8(c_rect.left as f32 / dpi_scale),
+                right: to_i8((w - c_rect.right) as f32 / dpi_scale),
+                top: to_i8((c_rect.top - (h - c_rect.bottom)) as f32 / dpi_scale),
+            }
         } else {
             Margin::ZERO
         }

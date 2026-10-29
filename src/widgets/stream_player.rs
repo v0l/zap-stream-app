@@ -1,30 +1,35 @@
 use crate::widgets::PlaceholderRect;
-use egui::{Context, Response, Ui, Widget};
-use egui_video::{Player, PlayerControls};
+use egui::{Response, Ui, Widget};
+use lumina_video::VideoPlayer;
 
 pub struct StreamPlayer {
-    player: Option<Player>,
+    player: Option<VideoPlayer>,
+    url: String,
 }
 
 impl StreamPlayer {
-    pub fn new(ctx: &Context, url: &String) -> Self {
-        let mut p = Player::new(ctx, url);
-        #[cfg(debug_assertions)]
-        p.set_debug(true);
+    pub fn new(render_state: Option<&egui_wgpu::RenderState>, url: &str) -> Self {
+        let player = render_state.map(|rs| VideoPlayer::with_wgpu(url, rs).with_autoplay(true));
+        Self {
+            player,
+            url: url.to_string(),
+        }
+    }
 
-        p.start();
-        Self { player: Some(p) }
+    pub fn url(&self) -> &str {
+        &self.url
     }
 }
 
 impl Widget for &mut StreamPlayer {
     fn ui(self, ui: &mut Ui) -> Response {
         let size = ui.available_size();
-
-        if let Some(p) = self.player.as_mut() {
-            ui.add_sized(size, p)
-        } else {
-            PlaceholderRect.ui(ui)
+        match self.player.as_mut() {
+            Some(p) => {
+                p.show(ui, size);
+                ui.response()
+            }
+            None => PlaceholderRect.ui(ui),
         }
     }
 }

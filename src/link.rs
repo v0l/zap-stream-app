@@ -130,17 +130,17 @@ impl TryInto<Filter> for &NostrLink {
     type Error = ();
     fn try_into(self) -> Result<Filter, Self::Error> {
         match self.hrp {
-            NostrLinkType::Coordinate => Ok(Filter::new()
-                .kinds([self.kind.unwrap() as u64])
-                .authors([&self.author.unwrap()])
-                .tags(
-                    [match self.id {
-                        IdOrStr::Str(ref s) => s.to_owned(),
-                        IdOrStr::Id(ref i) => hex::encode(i),
-                    }],
-                    'd',
-                )
-                .build()),
+            NostrLinkType::Coordinate => {
+                let d = match self.id {
+                    IdOrStr::Str(ref s) => s.to_owned(),
+                    IdOrStr::Id(ref i) => hex::encode(i),
+                };
+                Ok(Filter::new()
+                    .kinds([self.kind.unwrap() as u64])
+                    .authors([&self.author.unwrap()])
+                    .tags([d.as_str()], 'd')
+                    .build())
+            }
             NostrLinkType::Event | NostrLinkType::Note => Ok(Filter::new().build()),
             _ => Err(()),
         }

@@ -1,12 +1,12 @@
 use crate::theme::{MARGIN_DEFAULT, ROUNDING_DEFAULT, ZAP};
 use crate::widgets::Avatar;
 use crate::zap::{format_sats, Zap};
-use eframe::emath::Align;
-use eframe::epaint::text::{LayoutJob, TextFormat, TextWrapMode};
-use eframe::epaint::Color32;
+use egui::emath::Align;
+use egui::epaint::text::{LayoutJob, TextFormat, TextWrapMode};
+use egui::epaint::Color32;
 use egui::{Frame, Label, Response, Stroke, Ui};
 use nostrdb::NdbProfile;
-use notedeck::ImageCache;
+use notedeck::AppContext;
 
 pub struct ChatZap<'a> {
     zap: &'a Zap<'a>,
@@ -18,9 +18,9 @@ impl<'a> ChatZap<'a> {
         Self { zap, profile }
     }
 
-    pub fn render(self, ui: &mut Ui, img_cache: &mut ImageCache) -> Response {
+    pub fn render(self, ui: &mut Ui, ctx: &mut AppContext<'_>) -> Response {
         Frame::default()
-            .rounding(ROUNDING_DEFAULT)
+            .corner_radius(ROUNDING_DEFAULT)
             .inner_margin(MARGIN_DEFAULT)
             .stroke(Stroke::new(1., ZAP))
             .show(ui, |ui| {
@@ -56,7 +56,7 @@ impl<'a> ChatZap<'a> {
 
                     Avatar::from_profile(self.profile)
                         .size(24.)
-                        .render(ui, img_cache);
+                        .render(ui, ctx);
                     ui.add(Label::new(job).wrap_mode(TextWrapMode::Wrap));
 
                     // consume reset of space

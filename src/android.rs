@@ -1,8 +1,6 @@
 use crate::app::ZapStreamApp;
-use eframe::Renderer;
-use egui::ViewportBuilder;
-use winit::platform::android::activity::AndroidApp;
-use winit::platform::android::EventLoopBuilderExtAndroid;
+use android_activity::AndroidApp;
+use notedeck::Notedeck;
 
 pub fn start_android(app: AndroidApp) {
     std::env::set_var("RUST_BACKTRACE", "full");
@@ -10,35 +8,25 @@ pub fn start_android(app: AndroidApp) {
         android_logger::Config::default().with_max_level(log::LevelFilter::Info),
     );
 
-    let mut options = eframe::NativeOptions::default();
-    options.renderer = Renderer::Glow;
-
-    options.viewport = ViewportBuilder::default()
-        .with_active(true)
-        .with_always_on_top()
-        .with_fullscreen(true);
-
-    let app_clone_for_event_loop = app.clone();
-    options.event_loop_builder = Some(Box::new(move |builder| {
-        builder.with_android_app(app_clone_for_event_loop);
-    }));
-
     let data_path = app
-        .external_data_path()
-        .expect("external data path")
+        .internal_data_path()
+        .expect("internal data path")
         .to_path_buf();
+
+    let options = eframe::NativeOptions {
+        android_app: Some(app.clone()),
+        ..Default::default()
+    };
 
     if let Err(e) = eframe::run_native(
         "zap.stream",
         options,
         Box::new(move |cc| {
-            let args: Vec<String> = std::env::args().collect();
-            let mut notedeck =
-                notedeck_chrome::Notedeck::new(&cc.egui_ctx, data_path.clone(), &args);
-
-            let zs_app = ZapStreamApp::new(cc, app.clone());
-            notedeck.add_app(zs_app);
-
+            let args = vec!["argv0-placeholder".to_string()];
+            let mut notedeck = Notedeck::init(&cc.egui_ctx, data_path.clone(), &args);
+            notedeck.set_android_context(app.clone());
+            notedeck.setup(&cc.egui_ctx);
+            notedeck.set_app(ZapStreamApp::new(app.clone(), cc.wgpu_render_state.clone()));
             Ok(Box::new(notedeck))
         }),
     ) {

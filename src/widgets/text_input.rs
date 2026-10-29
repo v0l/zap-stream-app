@@ -31,7 +31,7 @@ impl<'a> NativeTextInput<'a> {
 impl Widget for NativeTextInput<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
         let mut editor = TextEdit::multiline(self.text)
-            .frame(false)
+            .frame(Frame::NONE)
             .desired_rows(1)
             .desired_width(f32::INFINITY);
         if let Some(hint_text) = self.hint_text {
@@ -39,10 +39,10 @@ impl Widget for NativeTextInput<'_> {
         }
 
         if self.frame {
-            Frame::none()
+            Frame::new()
                 .inner_margin(MARGIN_DEFAULT)
                 .fill(NEUTRAL_900)
-                .rounding(ROUNDING_DEFAULT)
+                .corner_radius(ROUNDING_DEFAULT)
                 .show(ui, |ui| ui.add(editor))
                 .inner
         } else {

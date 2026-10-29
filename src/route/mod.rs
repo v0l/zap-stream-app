@@ -1,22 +1,18 @@
 use crate::link::NostrLink;
-use crate::services::ffmpeg_loader::FfmpegLoader;
-use crate::widgets::PlaceholderRect;
 use anyhow::{anyhow, bail};
 use egui::load::SizedTexture;
-use egui::{vec2, Context, Id, Image, ImageSource, TextureHandle, Ui, Vec2};
-use egui_video::ffmpeg_rs_raw::Transcoder;
+use egui::{Context, Id, Image, Ui, Vec2};
 use ehttp::Response;
-use enostr::EventClientMessage;
+use enostr::RelayId;
 use lnurl::lightning_address::LightningAddress;
 use lnurl::pay::PayResponse;
-use lnurl::LnUrlResponse;
 use log::{info, warn};
-use nostr::{serde_json, Event, EventBuilder, JsonUtil, Keys, Kind, SecretKey, Tag};
+use nostr::{serde_json, Event, EventBuilder, JsonUtil, Keys, Kind, Tag};
 use nostrdb::{NdbProfile, NoteKey, Transaction};
-use notedeck::{AppContext, ImageCache};
+use notedeck::media::AnimationMode;
+use notedeck::{AppContext, ImageType, Images, MediaJobSender, PixelDimensions};
 use poll_promise::Promise;
 use std::collections::HashMap;
-use std::path::Path;
 use std::sync::mpsc;
 use std::task::Poll;
 
@@ -93,14 +89,23 @@ impl<'a, 'ctx> RouteServices<'a, 'ctx> {
 
     pub fn broadcast_event(&mut self, event: Event) {
         let ev_json = event.as_json();
-        if let Err(e) = self.ctx.ndb.process_event(&ev_json) {
+        if let Err(e) = self
+            .ctx
+            .ndb
+            .process_event_with(&ev_json, nostrdb::IngestMetadata::new().client(true))
+        {
             warn!("Failed to submit event {}", e);
         }
+        let relays = self
+            .ctx
+            .accounts
+            .selected_account_write_relays()
+            .into_iter()
+            .collect::<Vec<RelayId>>();
         self.ctx
-            .pool
-            .send(&enostr::ClientMessage::Event(EventClientMessage {
-                note_json: ev_json,
-            }));
+            .remote
+            .publisher_explicit()
+            .publish_event_json(ev_json, relays);
     }
 
     /// Load/Fetch profiles
@@ -173,7 +178,10 @@ impl<'a, 'ctx> RouteServices<'a, 'ctx> {
         self.ctx
             .accounts
             .get_selected_account()
-            .and_then(|acc| acc.secret_key.as_ref().map(|k| Keys::new(k.clone())))
+            .key
+            .secret_key
+            .as_ref()
+            .map(|k| Keys::new(k.clone()))
     }
 
     /// Simple wrapper around egui temp data
@@ -188,85 +196,27 @@ impl<'a, 'ctx> RouteServices<'a, 'ctx> {
     }
 }
 
-const LOGO_BYTES: &[u8] = include_bytes!("../resources/logo.svg");
-
 pub fn image_from_cache<'a>(
-    img_cache: &mut ImageCache,
-    ui: &Ui,
+    img_cache: &'a mut Images,
+    jobs: &MediaJobSender,
+    ui: &mut Ui,
     url: &str,
     size: Option<Vec2>,
 ) -> Option<Image<'a>> {
-    if url.len() == 0 {
+    if url.is_empty() {
         return None;
     }
-    let cache_key = if let Some(s) = size {
-        format!("{}:{}", url, s)
-    } else {
-        url.to_string()
-    };
-    if let Some(promise) = img_cache.map().get(&cache_key) {
-        match promise.poll() {
-            Poll::Ready(Ok(t)) => Some(Image::new(SizedTexture::from_handle(t))),
-            _ => None,
+    let img_type = match size {
+        Some(s) => {
+            let ppp = ui.ctx().pixels_per_point();
+            ImageType::Content(Some(PixelDimensions {
+                x: (s.x * ppp) as u32,
+                y: (s.y * ppp) as u32,
+            }))
         }
-    } else {
-        let fetch = fetch_img(img_cache, ui.ctx(), url, size);
-        img_cache.map_mut().insert(cache_key.clone(), fetch);
-        None
-    }
-}
-
-fn fetch_img(
-    img_cache: &ImageCache,
-    ctx: &Context,
-    url: &str,
-    size: Option<Vec2>,
-) -> Promise<notedeck::Result<TextureHandle>> {
-    let name = ImageCache::key(url);
-    let dst_path = img_cache.cache_dir.join(&name);
-    if dst_path.exists() {
-        let ctx = ctx.clone();
-        Promise::spawn_thread("load_from_disk", move || {
-            info!("Loading image from disk: {}", dst_path.display());
-            match FfmpegLoader::new().load_image(dst_path, size) {
-                Ok(img) => {
-                    ctx.request_repaint();
-                    ctx.forget_image(&name);
-                    Ok(ctx.load_texture(&name, img, Default::default()))
-                }
-                Err(e) => Err(notedeck::Error::Generic(e.to_string())),
-            }
-        })
-    } else {
-        let url = url.to_string();
-        let ctx = ctx.clone();
-        Promise::spawn_thread("load_from_net", move || {
-            let img = match fetch_img_from_net(&url).block_and_take() {
-                Ok(img) => img,
-                Err(e) => return Err(notedeck::Error::Generic(e.to_string())),
-            };
-            std::fs::create_dir_all(&dst_path.parent().unwrap()).unwrap();
-            std::fs::write(&dst_path, &img.bytes).unwrap();
-
-            info!("Loading image from net: {}", &url);
-            match FfmpegLoader::new().load_image(dst_path, size) {
-                Ok(img) => {
-                    ctx.request_repaint();
-                    ctx.forget_image(&name);
-                    Ok(ctx.load_texture(&name, img, Default::default()))
-                }
-                Err(e) => Err(notedeck::Error::Generic(e.to_string())),
-            }
-        })
-    }
-}
-
-fn fetch_img_from_net(url: &str) -> Promise<ehttp::Result<Response>> {
-    let (sender, promise) = Promise::new();
-    let request = ehttp::Request::get(url);
-    info!("Downloaded image: {}", url);
-    ehttp::fetch(request, move |response| {
-        sender.send(response);
-    });
-    promise
+        None => ImageType::Content(None),
+    };
+    img_cache
+        .latest_texture(jobs, ui, url, img_type, AnimationMode::NoAnimation)
+        .map(|t| Image::new(SizedTexture::from_handle(t)))
 }

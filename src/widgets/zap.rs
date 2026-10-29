@@ -8,11 +8,7 @@ use crate::widgets::{Button, NativeTextInput};
 use crate::zap::format_sats;
 use anyhow::{anyhow, bail};
 use egui::text::{LayoutJob, TextWrapping};
-use egui::{vec2, Frame, Grid, Response, RichText, Stroke, TextFormat, TextWrapMode, Ui, Widget};
-use egui_modal::Modal;
-use egui_qr::QrCodeWidget;
-use enostr::PoolRelay;
-use itertools::Itertools;
+use egui::{vec2, Frame, Grid, Response, RichText, TextFormat, TextWrapMode, Ui, Widget};
 use lnurl::pay::{LnURLPayInvoice, PayResponse};
 use nostr::prelude::{hex, ZapRequestData};
 use nostr::{serde_json, EventBuilder, JsonUtil, Kind, PublicKey, Tag, Url};
@@ -61,78 +57,77 @@ impl<'a> ZapButton<'a> {
     }
 
     pub fn render(self, ui: &mut Ui, services: &mut RouteServices) -> Response {
-        // TODO: fix id
-        let modal = Modal::new(ui.ctx(), format!("zapper-{}", 0)).with_close_on_outside_click(true);
-
         let resp = Button::new().show(ui, |ui| ui.label("ZAP"));
+        let open_id = egui::Id::new("zap_modal_open");
         if resp.clicked() {
-            modal.open();
+            ui.ctx().data_mut(|d| d.insert_temp(open_id, true));
         }
-        ui.visuals_mut().window_rounding = ROUNDING_DEFAULT.into();
-        ui.visuals_mut().window_stroke = Stroke::NONE;
-        ui.visuals_mut().window_fill = NEUTRAL_900;
+        let open = ui.ctx().data(|d| d.get_temp::<bool>(open_id)).unwrap_or(false);
+        if !open {
+            return resp;
+        }
 
-        modal.show(|ui| {
-            Frame::none().inner_margin(MARGIN_DEFAULT).show(ui, |ui| {
-                ui.spacing_mut().item_spacing = vec2(8.0, 8.0);
+        let modal = egui::Modal::new(egui::Id::new("zapper")).frame(
+            Frame::new()
+                .fill(NEUTRAL_900)
+                .corner_radius(ROUNDING_DEFAULT as u8)
+                .inner_margin(MARGIN_DEFAULT),
+        );
+        let modal_resp = modal.show(ui.ctx(), |ui| {
+            ui.set_width(360.0);
+            ui.spacing_mut().item_spacing = vec2(8.0, 8.0);
 
-                let pubkey = match &self.target {
-                    ZapTarget::PublicKey { pubkey } => pubkey,
-                    ZapTarget::Event { event } => event.host(),
-                };
+            let pubkey = match &self.target {
+                ZapTarget::PublicKey { pubkey } => pubkey,
+                ZapTarget::Event { event } => event.host(),
+            };
 
-                // zapping state machine
-                let zap_state = services.get("zap_state").unwrap_or(ZapState::NotStarted);
-                match &zap_state {
-                    ZapState::NotStarted => match services.fetch_lnurlp(pubkey) {
-                        Ok(Poll::Ready(r)) => {
-                            services.set("zap_state", ZapState::Ready { service: r })
+            let zap_state = services.get("zap_state").unwrap_or(ZapState::NotStarted);
+            match &zap_state {
+                ZapState::NotStarted => match services.fetch_lnurlp(pubkey) {
+                    Ok(Poll::Ready(r)) => services.set("zap_state", ZapState::Ready { service: r }),
+                    Err(e) => services.set("zap_state", ZapState::Error(e.to_string())),
+                    _ => {}
+                },
+                ZapState::FetchingInvoice { callback } => {
+                    match self.zap_get_invoice(callback, services) {
+                        Ok(Poll::Ready(s)) => {
+                            services.set("zap_state", ZapState::Invoice { invoice: s })
                         }
                         Err(e) => services.set("zap_state", ZapState::Error(e.to_string())),
                         _ => {}
-                    },
-                    ZapState::FetchingInvoice { callback } => {
-                        match self.zap_get_invoice(callback, services) {
-                            Ok(Poll::Ready(s)) => {
-                                services.set("zap_state", ZapState::Invoice { invoice: s })
-                            }
-                            Err(e) => services.set("zap_state", ZapState::Error(e.to_string())),
-                            _ => {}
-                        }
                     }
-                    _ => {}
                 }
+                _ => {}
+            }
 
-                // when ready state, show zap button
-                match &zap_state {
-                    ZapState::Ready { service } => {
-                        self.render_input(ui, services, pubkey, service);
-                    }
-                    ZapState::Invoice { invoice } => {
-                        if let Ok(q) = QrCodeWidget::from_data(invoice.pr.as_bytes()) {
-                            ui.vertical_centered(|ui| {
-                                ui.add_sized(vec2(256., 256.), q);
-
-                                let mut job = LayoutJob::default();
-                                job.wrap = TextWrapping::from_wrap_mode_and_width(
-                                    TextWrapMode::Truncate,
-                                    ui.available_width(),
-                                );
-                                job.append(&invoice.pr, 0.0, TextFormat::default());
-                                ui.label(job);
-                            });
-                        }
-                    }
-                    ZapState::Error(e) => {
-                        ui.label(e);
-                    }
-                    _ => {}
+            match &zap_state {
+                ZapState::Ready { service } => {
+                    self.render_input(ui, services, pubkey, service);
                 }
-            })
+                ZapState::Invoice { invoice } => {
+                    ui.vertical_centered(|ui| {
+                        qr_code(ui, invoice.pr.as_bytes(), 256.0);
+
+                        let mut job = LayoutJob::default();
+                        job.wrap = TextWrapping::from_wrap_mode_and_width(
+                            TextWrapMode::Truncate,
+                            ui.available_width(),
+                        );
+                        job.append(&invoice.pr, 0.0, TextFormat::default());
+                        ui.label(job);
+                    });
+                }
+                ZapState::Error(e) => {
+                    ui.label(e);
+                }
+                _ => {}
+            }
         });
 
-        if modal.was_outside_clicked() {
-            services.set("zap_state", ZapState::NotStarted)
+        if modal_resp.should_close() {
+            services.set("zap_state", ZapState::NotStarted);
+            ui.ctx().data_mut(|d| d.insert_temp(open_id, false));
         }
         resp
     }
@@ -246,11 +241,11 @@ impl<'a> ZapButton<'a> {
     ) -> anyhow::Result<Url> {
         let relays: Vec<Url> = services
             .ctx
-            .pool
-            .relays
-            .iter()
+            .accounts
+            .selected_account_write_relays()
+            .into_iter()
             .filter_map(|r| match r {
-                PoolRelay::Websocket(w) => Url::parse(&w.relay.url).ok(),
+                enostr::RelayId::Websocket(u) => Url::parse(u.as_str()).ok(),
                 _ => None,
             })
             .collect();
@@ -290,5 +285,29 @@ impl<'a> ZapButton<'a> {
                 .append_pair("nostr", req_ev.as_json().as_str());
         }
         Ok(url)
+    }
+}
+
+fn qr_code(ui: &mut Ui, data: &[u8], size: f32) {
+    let Ok(code) = qrcode::QrCode::new(data) else {
+        return;
+    };
+    let n = code.width();
+    let (rect, _) = ui.allocate_exact_size(vec2(size, size), egui::Sense::hover());
+    let painter = ui.painter_at(rect);
+    painter.rect_filled(rect, 0.0, egui::Color32::WHITE);
+    let quiet = 2.0;
+    let cell = size / (n as f32 + quiet * 2.0);
+    for (i, c) in code.to_colors().iter().enumerate() {
+        if *c == qrcode::Color::Dark {
+            let x = (i % n) as f32;
+            let y = (i / n) as f32;
+            let min = rect.min + vec2((x + quiet) * cell, (y + quiet) * cell);
+            painter.rect_filled(
+                egui::Rect::from_min_size(min, vec2(cell, cell)),
+                0.0,
+                egui::Color32::BLACK,
+            );
+        }
     }
 }

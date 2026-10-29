@@ -7,7 +7,6 @@ mod note_util;
 mod note_view;
 mod profiles;
 mod route;
-mod services;
 mod stream_info;
 mod sub;
 mod theme;

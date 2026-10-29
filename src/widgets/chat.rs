@@ -31,7 +31,7 @@ impl Chat {
     pub fn get_filter(&self) -> Filter {
         Filter::new()
             .kinds([1_311, 9_735])
-            .tags([self.link.to_tag_value()], 'a')
+            .tags([self.link.to_tag_value().as_str()], 'a')
             .build()
     }
 }
@@ -47,8 +47,8 @@ impl NostrWidget for Chat {
         ScrollArea::vertical()
             .stick_to_bottom(true)
             .show(ui, |ui| {
-                Frame::none()
-                    .outer_margin(Margin::symmetric(12., 8.))
+                Frame::new()
+                    .outer_margin(Margin::symmetric(12, 8))
                     .show(ui, |ui| {
                         ui.vertical(|ui| {
                             ui.spacing_mut().item_spacing.y = 8.0;
@@ -70,7 +70,7 @@ impl NostrWidget for Chat {
                                             if let Ok(zap) = Zap::from_receipt(ev) {
                                                 let profile = services.profile(&zap.sender);
                                                 ChatZap::new(&zap, &profile)
-                                                    .render(ui, services.ctx.img_cache);
+                                                    .render(ui, services.ctx);
                                             }
                                         }
                                         _ => {}
@@ -87,9 +87,8 @@ impl NostrWidget for Chat {
     fn update(&mut self, services: &mut RouteServices<'_, '_>) -> anyhow::Result<()> {
         let filters = vec![self.get_filter()];
         sub_or_poll(
-            services.ctx.ndb,
+            services.ctx,
             services.tx,
-            services.ctx.pool,
             &mut self.events,
             &mut self.sub,
             filters,

@@ -3,7 +3,8 @@ use crate::route::{image_from_cache, RouteServices, RouteType};
 use crate::stream_info::{StreamInfo, StreamStatus};
 use crate::theme::{NEUTRAL_800, NEUTRAL_900, PRIMARY, ROUNDING_DEFAULT};
 use crate::widgets::avatar::Avatar;
-use eframe::epaint::{Rounding, Vec2};
+use egui::epaint::CornerRadius;
+use egui::Vec2;
 use egui::epaint::RectShape;
 use egui::{
     vec2, Color32, CursorIcon, FontId, ImageSource, Label, Pos2, Rect, Response, RichText, Sense,
@@ -36,26 +37,38 @@ impl<'a> StreamEvent<'a> {
                 self.event
                     .image()
                     .and_then(|p| {
-                        image_from_cache(services.ctx.img_cache, ui, p, Some(Vec2::new(w, h)))
+                        image_from_cache(
+                            services.ctx.img_cache,
+                            services.ctx.media_jobs.sender(),
+                            ui,
+                            p,
+                            Some(Vec2::new(w, h)),
+                        )
                     })
-                    .map(|i| i.rounding(ROUNDING_DEFAULT))
+                    .map(|i| i.corner_radius(ROUNDING_DEFAULT))
             } else {
                 None
             };
 
             if let Some(cover) = cover {
-                painter.add(RectShape {
-                    rect: response.rect,
-                    rounding: Rounding::same(ROUNDING_DEFAULT),
-                    fill: Color32::WHITE,
-                    stroke: Default::default(),
-                    blur_width: 0.0,
-                    fill_texture_id: match cover.source(ui.ctx()) {
-                        ImageSource::Texture(t) => t.id,
-                        _ => Default::default(),
-                    },
-                    uv: Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(1.0, 1.0)),
-                });
+                let texture_id = match cover.source(ui.ctx()) {
+                    ImageSource::Texture(t) => Some(t.id),
+                    _ => None,
+                };
+                if let Some(id) = texture_id {
+                    let mut shape = RectShape::filled(
+                        response.rect,
+                        CornerRadius::same(ROUNDING_DEFAULT as u8),
+                        Color32::WHITE,
+                    );
+                    shape.brush = Some(std::sync::Arc::new(egui::epaint::Brush {
+                        fill_texture_id: id,
+                        uv: Rect::from_min_max(Pos2::new(0.0, 0.0), Pos2::new(1.0, 1.0)),
+                    }));
+                    painter.add(shape);
+                } else {
+                    painter.rect_filled(response.rect, ROUNDING_DEFAULT, NEUTRAL_800);
+                }
             } else {
                 painter.rect_filled(response.rect, ROUNDING_DEFAULT, NEUTRAL_800);
             }
@@ -113,7 +126,7 @@ impl<'a> StreamEvent<'a> {
             ui.horizontal(|ui| {
                 Avatar::from_profile(&host_profile)
                     .size(40.)
-                    .render(ui, services.ctx.img_cache);
+                    .render(ui, services.ctx);
                 let title = RichText::new(self.event.title().unwrap_or("Untitled"))
                     .size(16.)
                     .color(Color32::WHITE);

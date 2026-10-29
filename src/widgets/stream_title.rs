@@ -17,7 +17,7 @@ impl<'a> StreamTitle<'a> {
         StreamTitle { event }
     }
     pub fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_, '_>) -> Response {
-        Frame::none()
+        Frame::new()
             .outer_margin(MARGIN_DEFAULT)
             .show(ui, |ui| {
                 ui.spacing_mut().item_spacing = vec2(5., 8.0);

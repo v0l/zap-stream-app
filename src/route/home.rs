@@ -94,9 +94,8 @@ impl NostrWidget for HomePage {
 
     fn update(&mut self, services: &mut RouteServices<'_, '_>) -> anyhow::Result<()> {
         sub_or_poll(
-            services.ctx.ndb,
+            services.ctx,
             services.tx,
-            services.ctx.pool,
             &mut self.events,
             &mut self.sub,
             Self::get_filters(),

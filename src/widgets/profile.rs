@@ -42,7 +42,7 @@ impl<'a> Profile<'a> {
             };
             Avatar::from_profile(&profile)
                 .size(self.size)
-                .render(ui, services.ctx.img_cache);
+                .render(ui, services.ctx);
             ui.add(Username::new(&profile, FONT_SIZE))
         })
         .response

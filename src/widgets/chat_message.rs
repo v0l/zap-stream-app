@@ -3,7 +3,7 @@ use crate::route::{RouteServices, RouteType};
 use crate::stream_info::StreamInfo;
 use crate::theme::{NEUTRAL_500, PRIMARY};
 use crate::widgets::Avatar;
-use eframe::epaint::text::TextWrapMode;
+use egui::epaint::text::TextWrapMode;
 use egui::text::LayoutJob;
 use egui::{Align, Color32, Label, Response, TextFormat, Ui};
 use nostrdb::{NdbProfile, Note};
@@ -51,7 +51,7 @@ impl<'a> ChatMessage<'a> {
 
             if Avatar::from_profile(self.profile)
                 .size(24.)
-                .render(ui, services.ctx.img_cache)
+                .render(ui, services.ctx)
                 .clicked()
             {
                 services.navigate(RouteType::ProfilePage {

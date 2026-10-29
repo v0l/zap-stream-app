@@ -36,12 +36,13 @@ impl NostrWidget for ProfilePage {
 
                     if let Some(banner) = profile.map(|p| p.banner()).flatten() {
                         if let Some(img) = image_from_cache(
-                            &mut services.ctx.img_cache,
+                            services.ctx.img_cache,
+                            services.ctx.media_jobs.sender(),
                             ui,
                             banner,
                             Some(vec2(ui.available_width(), 360.0)),
                         ) {
-                            img.rounding(ROUNDING_DEFAULT).ui(ui);
+                            img.corner_radius(ROUNDING_DEFAULT).ui(ui);
                         } else {
                             PlaceholderRect.ui(ui);
                         }
@@ -60,7 +61,7 @@ impl NostrWidget for ProfilePage {
                 .collect();
 
             StreamList::new(
-                Id::from("profile-streams"),
+                Id::new("profile-streams"),
                 NotesView::from_vec(events.iter().collect()),
                 Some("Past Streams"),
             )
@@ -71,9 +72,8 @@ impl NostrWidget for ProfilePage {
 
     fn update(&mut self, services: &mut RouteServices<'_, '_>) -> anyhow::Result<()> {
         sub_or_poll(
-            services.ctx.ndb,
+            services.ctx,
             services.tx,
-            services.ctx.pool,
             &mut self.events,
             &mut self.sub,
             vec![

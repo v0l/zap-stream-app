@@ -20,8 +20,8 @@ use crate::note_ref::NoteRef;
 use crate::route::RouteServices;
 use crate::sub::SubRef;
 use egui::{Response, Ui};
-use enostr::RelayPool;
 use nostrdb::{Filter, Ndb, Transaction};
+use notedeck::{AppContext, ScopedSubIdentity, SubConfig, SubKey, SubOwnerKey};
 use std::collections::HashSet;
 
 /// A stateful widget which requests nostr data
@@ -35,13 +35,13 @@ pub trait NostrWidget {
 
 /// On widget update call this to update NDB data
 pub fn sub_or_poll(
-    ndb: &Ndb,
+    ctx: &mut AppContext<'_>,
     tx: &Transaction,
-    pool: &mut RelayPool,
     store: &mut HashSet<NoteRef>,
     sub: &mut Option<SubRef>,
     filters: Vec<Filter>,
 ) -> anyhow::Result<()> {
+    let ndb: &Ndb = ctx.ndb;
     if let Some(sub) = sub {
         ndb.poll_for_notes(sub.sub, 500).into_iter().for_each(|e| {
             if let Ok(note) = ndb.get_note_by_key(tx, e) {
@@ -50,13 +50,18 @@ pub fn sub_or_poll(
         });
     } else {
         let s = ndb.subscribe(filters.as_slice())?;
-        sub.replace(SubRef::new(s, ndb.clone()));
+        let owner = SubOwnerKey::new(("zap-stream-ndb", s.id()));
+        let identity = ScopedSubIdentity::account(owner, SubKey::new(("ndb", s.id())));
+        sub.replace(SubRef::new(s, ndb.clone(), owner));
         ndb.query(tx, filters.as_slice(), 500)?
             .into_iter()
             .for_each(|e| {
                 store.insert(NoteRef::from_query_result(e));
             });
-        pool.subscribe(format!("ndb-{}", s.id()), filters);
+        let config = SubConfig::builder(filters).accounts_read_important().build();
+        ctx.remote
+            .scoped_subs(ctx.accounts)
+            .set_sub(identity, config);
     }
     Ok(())
 }
