@@ -24,6 +24,7 @@ pub struct ZapStreamApp {
     profiles: ProfileLoader,
     fetch: HashMap<String, Promise<ehttp::Result<ehttp::Response>>>,
     fonts_set: bool,
+    startup_link: Option<crate::link::NostrLink>,
     render_state: Option<egui_wgpu::RenderState>,
 }
 
@@ -39,6 +40,7 @@ impl ZapStreamApp {
             routes_rx: rx,
             fetch: HashMap::new(),
             fonts_set: false,
+            startup_link: startup_link_from_env(),
             render_state,
             app,
         }
@@ -60,6 +62,7 @@ impl ZapStreamApp {
             routes_rx: rx,
             fetch: HashMap::new(),
             fonts_set: false,
+            startup_link: startup_link_from_env(),
             render_state,
         }
     }
@@ -82,6 +85,19 @@ impl ZapStreamApp {
     }
 }
 
+fn startup_link_from_env() -> Option<crate::link::NostrLink> {
+    let v = std::env::var("ZAP_STREAM_OPEN").ok()?;
+    let (author, d) = v.split_once(':')?;
+    let author: [u8; 32] = nostr::prelude::hex::decode(author).ok()?.try_into().ok()?;
+    Some(crate::link::NostrLink::new(
+        crate::link::NostrLinkType::Coordinate,
+        crate::link::IdOrStr::Str(d.to_string()),
+        Some(30_311),
+        Some(author),
+        vec![],
+    ))
+}
+
 fn profiles_sub_identity() -> ScopedSubIdentity {
     ScopedSubIdentity::account(
         SubOwnerKey::new("zap-stream-profiles"),
@@ -101,6 +117,14 @@ impl notedeck::App for ZapStreamApp {
                 ..Visuals::dark()
             },
         );
+
+        if let Some(link) = self.startup_link.take() {
+            self.widget = Box::new(page::StreamPage::new_from_link(
+                link.clone(),
+                self.render_state.clone(),
+            ));
+            self.current = RouteType::EventPage { link, event: None };
+        }
 
         let released = crate::sub::take_released();
         if !released.is_empty() {

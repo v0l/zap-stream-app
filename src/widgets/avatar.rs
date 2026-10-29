@@ -61,6 +61,7 @@ impl Avatar {
             })
         {
             Some(img) => img
+                .fit_to_exact_size(size)
                 .corner_radius(size_v / 2.0)
                 .sense(Sense::click())
                 .ui(ui),
