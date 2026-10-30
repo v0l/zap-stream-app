@@ -14,8 +14,21 @@ mod widgets;
 mod zap;
 
 #[cfg(target_os = "android")]
+pub use lumina_video::*;
+
+#[cfg(target_os = "android")]
 #[no_mangle]
-#[tokio::main]
-pub async fn android_main(app: android_activity::AndroidApp) {
-    android::start_android(app);
+pub fn android_main(app: android_activity::AndroidApp) {
+    android_logger::init_once(
+        android_logger::Config::default()
+            .with_tag("zapstream")
+            .with_max_level(log::LevelFilter::Info),
+    );
+    std::panic::set_hook(Box::new(|info| log::error!("panic: {info}")));
+    log::info!("android_main entered");
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .expect("tokio runtime");
+    runtime.block_on(async move { android::start_android(app) });
 }

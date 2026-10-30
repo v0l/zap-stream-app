@@ -44,13 +44,13 @@ android_logger = "0.15.0"
 android-activity = { version = "0.6", features = ["game-activity"] }
 
 [patch.crates-io]
-egui = { git = "https://github.com/damus-io/egui", rev = "c2c8f34fd3679475226ea67ab060f3324d3f2357" }
-eframe = { git = "https://github.com/damus-io/egui", rev = "c2c8f34fd3679475226ea67ab060f3324d3f2357" }
-egui-winit = { git = "https://github.com/damus-io/egui", rev = "c2c8f34fd3679475226ea67ab060f3324d3f2357" }
-egui-wgpu = { git = "https://github.com/damus-io/egui", rev = "c2c8f34fd3679475226ea67ab060f3324d3f2357" }
-egui_system_fonts = { git = "https://github.com/damus-io/egui", rev = "c2c8f34fd3679475226ea67ab060f3324d3f2357" }
-egui_extras = { git = "https://github.com/damus-io/egui", rev = "c2c8f34fd3679475226ea67ab060f3324d3f2357" }
-epaint = { git = "https://github.com/damus-io/egui", rev = "c2c8f34fd3679475226ea67ab060f3324d3f2357" }
+egui = { git = "https://github.com/v0l/egui", rev = "2f81a2876161a81cea827bdbba8dcdd5b67cdb4a" }
+eframe = { git = "https://github.com/v0l/egui", rev = "2f81a2876161a81cea827bdbba8dcdd5b67cdb4a" }
+egui-winit = { git = "https://github.com/v0l/egui", rev = "2f81a2876161a81cea827bdbba8dcdd5b67cdb4a" }
+egui-wgpu = { git = "https://github.com/v0l/egui", rev = "2f81a2876161a81cea827bdbba8dcdd5b67cdb4a" }
+egui_system_fonts = { git = "https://github.com/v0l/egui", rev = "2f81a2876161a81cea827bdbba8dcdd5b67cdb4a" }
+egui_extras = { git = "https://github.com/v0l/egui", rev = "2f81a2876161a81cea827bdbba8dcdd5b67cdb4a" }
+epaint = { git = "https://github.com/v0l/egui", rev = "2f81a2876161a81cea827bdbba8dcdd5b67cdb4a" }
 winit = { git = "https://github.com/damus-io/winit", rev = "151a75954fe210a1792eb71a36f9bdae59cc6f4b" }
 android-activity = { git = "https://github.com/damus-io/android-activity", rev = "642d4b05836f6cc12c3bd775bcf0d1b467e2014d" }
 

@@ -1373,7 +1373,7 @@ checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
 [[package]]
 name = "ecolor"
 version = "0.36.2"
-source = "git+https://github.com/damus-io/egui?rev=c2c8f34fd3679475226ea67ab060f3324d3f2357#c2c8f34fd3679475226ea67ab060f3324d3f2357"
+source = "git+https://github.com/v0l/egui?rev=2f81a2876161a81cea827bdbba8dcdd5b67cdb4a#2f81a2876161a81cea827bdbba8dcdd5b67cdb4a"
 dependencies = [
  "bytemuck",
  "emath",
@@ -1383,7 +1383,7 @@ dependencies = [
 [[package]]
 name = "eframe"
 version = "0.36.2"
-source = "git+https://github.com/damus-io/egui?rev=c2c8f34fd3679475226ea67ab060f3324d3f2357#c2c8f34fd3679475226ea67ab060f3324d3f2357"
+source = "git+https://github.com/v0l/egui?rev=2f81a2876161a81cea827bdbba8dcdd5b67cdb4a#2f81a2876161a81cea827bdbba8dcdd5b67cdb4a"
 dependencies = [
  "ahash",
  "bytemuck",
@@ -1419,7 +1419,7 @@ dependencies = [
 [[package]]
 name = "egui"
 version = "0.36.2"
-source = "git+https://github.com/damus-io/egui?rev=c2c8f34fd3679475226ea67ab060f3324d3f2357#c2c8f34fd3679475226ea67ab060f3324d3f2357"
+source = "git+https://github.com/v0l/egui?rev=2f81a2876161a81cea827bdbba8dcdd5b67cdb4a#2f81a2876161a81cea827bdbba8dcdd5b67cdb4a"
 dependencies = [
  "accesskit",
  "ahash",
@@ -1440,7 +1440,7 @@ dependencies = [
 [[package]]
 name = "egui-wgpu"
 version = "0.36.2"
-source = "git+https://github.com/damus-io/egui?rev=c2c8f34fd3679475226ea67ab060f3324d3f2357#c2c8f34fd3679475226ea67ab060f3324d3f2357"
+source = "git+https://github.com/v0l/egui?rev=2f81a2876161a81cea827bdbba8dcdd5b67cdb4a#2f81a2876161a81cea827bdbba8dcdd5b67cdb4a"
 dependencies = [
  "ahash",
  "bytemuck",
@@ -1459,7 +1459,7 @@ dependencies = [
 [[package]]
 name = "egui-winit"
 version = "0.36.2"
-source = "git+https://github.com/damus-io/egui?rev=c2c8f34fd3679475226ea67ab060f3324d3f2357#c2c8f34fd3679475226ea67ab060f3324d3f2357"
+source = "git+https://github.com/v0l/egui?rev=2f81a2876161a81cea827bdbba8dcdd5b67cdb4a#2f81a2876161a81cea827bdbba8dcdd5b67cdb4a"
 dependencies = [
  "arboard",
  "bytemuck",
@@ -1479,7 +1479,7 @@ dependencies = [
 [[package]]
 name = "egui_extras"
 version = "0.36.2"
-source = "git+https://github.com/damus-io/egui?rev=c2c8f34fd3679475226ea67ab060f3324d3f2357#c2c8f34fd3679475226ea67ab060f3324d3f2357"
+source = "git+https://github.com/v0l/egui?rev=2f81a2876161a81cea827bdbba8dcdd5b67cdb4a#2f81a2876161a81cea827bdbba8dcdd5b67cdb4a"
 dependencies = [
  "ahash",
  "egui",
@@ -1496,7 +1496,7 @@ dependencies = [
 [[package]]
 name = "egui_glow"
 version = "0.36.2"
-source = "git+https://github.com/damus-io/egui?rev=c2c8f34fd3679475226ea67ab060f3324d3f2357#c2c8f34fd3679475226ea67ab060f3324d3f2357"
+source = "git+https://github.com/v0l/egui?rev=2f81a2876161a81cea827bdbba8dcdd5b67cdb4a#2f81a2876161a81cea827bdbba8dcdd5b67cdb4a"
 dependencies = [
  "bytemuck",
  "egui",
@@ -1520,7 +1520,7 @@ dependencies = [
 [[package]]
 name = "egui_system_fonts"
 version = "0.36.2"
-source = "git+https://github.com/damus-io/egui?rev=c2c8f34fd3679475226ea67ab060f3324d3f2357#c2c8f34fd3679475226ea67ab060f3324d3f2357"
+source = "git+https://github.com/v0l/egui?rev=2f81a2876161a81cea827bdbba8dcdd5b67cdb4a#2f81a2876161a81cea827bdbba8dcdd5b67cdb4a"
 dependencies = [
  "epaint",
  "fontique",
@@ -1586,7 +1586,7 @@ dependencies = [
 [[package]]
 name = "emath"
 version = "0.36.2"
-source = "git+https://github.com/damus-io/egui?rev=c2c8f34fd3679475226ea67ab060f3324d3f2357#c2c8f34fd3679475226ea67ab060f3324d3f2357"
+source = "git+https://github.com/v0l/egui?rev=2f81a2876161a81cea827bdbba8dcdd5b67cdb4a#2f81a2876161a81cea827bdbba8dcdd5b67cdb4a"
 dependencies = [
  "bytemuck",
  "serde",
@@ -1684,7 +1684,7 @@ dependencies = [
 [[package]]
 name = "epaint"
 version = "0.36.2"
-source = "git+https://github.com/damus-io/egui?rev=c2c8f34fd3679475226ea67ab060f3324d3f2357#c2c8f34fd3679475226ea67ab060f3324d3f2357"
+source = "git+https://github.com/v0l/egui?rev=2f81a2876161a81cea827bdbba8dcdd5b67cdb4a#2f81a2876161a81cea827bdbba8dcdd5b67cdb4a"
 dependencies = [
  "ahash",
  "bytemuck",
@@ -1710,7 +1710,7 @@ dependencies = [
 [[package]]
 name = "epaint_default_fonts"
 version = "0.36.2"
-source = "git+https://github.com/damus-io/egui?rev=c2c8f34fd3679475226ea67ab060f3324d3f2357#c2c8f34fd3679475226ea67ab060f3324d3f2357"
+source = "git+https://github.com/v0l/egui?rev=2f81a2876161a81cea827bdbba8dcdd5b67cdb4a#2f81a2876161a81cea827bdbba8dcdd5b67cdb4a"
 
 [[package]]
 name = "equator"
@@ -4073,6 +4073,7 @@ dependencies = [
  "opus",
  "parking_lot",
  "poll-promise",
+ "pollster 0.4.0",
  "profiling",
  "rustls",
  "symphonia-codec-aac",
