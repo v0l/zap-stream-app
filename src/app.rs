@@ -24,6 +24,7 @@ pub struct ZapStreamApp {
     profiles: ProfileLoader,
     fetch: HashMap<String, Promise<ehttp::Result<ehttp::Response>>>,
     fonts_set: bool,
+    frame_stats: Option<crate::frame_stats::FrameStats>,
     startup_link: Option<crate::link::NostrLink>,
     render_state: Option<egui_wgpu::RenderState>,
 }
@@ -40,6 +41,7 @@ impl ZapStreamApp {
             routes_rx: rx,
             fetch: HashMap::new(),
             fonts_set: false,
+            frame_stats: crate::frame_stats::FrameStats::enabled(),
             startup_link: startup_link_from_env(),
             render_state,
             app,
@@ -62,6 +64,7 @@ impl ZapStreamApp {
             routes_rx: rx,
             fetch: HashMap::new(),
             fonts_set: false,
+            frame_stats: crate::frame_stats::FrameStats::enabled(),
             startup_link: startup_link_from_env(),
             render_state,
         }
@@ -108,6 +111,9 @@ fn profiles_sub_identity() -> ScopedSubIdentity {
 impl notedeck::App for ZapStreamApp {
     fn render(&mut self, ctx: &mut AppContext<'_>, ui: &mut Ui) -> AppResponse {
         self.setup_fonts(ui.ctx());
+        if let Some(s) = self.frame_stats.as_mut() {
+            s.tick();
+        }
 
         ui.ctx().set_visuals_of(
             Theme::Dark,
