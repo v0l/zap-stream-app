@@ -47,6 +47,7 @@ pub enum RouteType {
 #[derive(PartialEq)]
 pub enum RouteAction {
     DemandProfile([u8; 32]),
+    SelectAccount(enostr::Pubkey),
 }
 
 pub struct RouteServices<'a, 'ctx> {

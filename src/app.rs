@@ -157,6 +157,9 @@ impl notedeck::App for ZapStreamApp {
                     RouteAction::DemandProfile(p) => {
                         self.profiles.demand(p);
                     }
+                    RouteAction::SelectAccount(pk) => {
+                        ctx.select_account(&pk);
+                    }
                 }
             } else {
                 self.current = r;
