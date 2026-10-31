@@ -17,6 +17,8 @@ pub struct HomePage {
     zaps: HashSet<NoteRef>,
     zap_sub: Option<SubRef>,
     preview: Option<(String, widgets::StreamPlayer)>,
+    board: (u64, Vec<([u8; 32], u64)>),
+    board_len: usize,
     render_state: Option<egui_wgpu::RenderState>,
 }
 
@@ -24,6 +26,8 @@ impl HomePage {
     pub fn new(render_state: Option<egui_wgpu::RenderState>) -> Self {
         Self {
             preview: None,
+            board: (0, Vec::new()),
+            board_len: usize::MAX,
             render_state,
             events: HashSet::new(),
             sub: None,
@@ -40,7 +44,16 @@ impl HomePage {
         vec![Filter::new().kinds([9_735]).since(since).limit(500).build()]
     }
 
-    fn leaderboard(&self, services: &mut RouteServices<'_, '_>) -> (u64, Vec<([u8; 32], u64)>) {
+    fn leaderboard(&mut self, services: &mut RouteServices<'_, '_>) -> (u64, Vec<([u8; 32], u64)>) {
+        if self.board_len == self.zaps.len() {
+            return self.board.clone();
+        }
+        self.board_len = self.zaps.len();
+        self.board = self.compute_leaderboard(services);
+        self.board.clone()
+    }
+
+    fn compute_leaderboard(&self, services: &mut RouteServices<'_, '_>) -> (u64, Vec<([u8; 32], u64)>) {
         let mut total = 0u64;
         let mut by_sender: std::collections::HashMap<[u8; 32], u64> = Default::default();
         for r in &self.zaps {
@@ -192,7 +205,14 @@ impl NostrWidget for HomePage {
                             .collect();
                         live.sort_by_key(|e| std::cmp::Reverse(e.viewers().unwrap_or(0)));
 
-                        let (total, top_zappers) = self.leaderboard(services);
+                        let wide_panel = wide && ui.available_width() > 900.0;
+                        let (total, top_zappers) = if wide_panel {
+                            let _t = crate::frame_stats::Section::start("leaderboard");
+                            self.leaderboard(services)
+                        } else {
+                            (0, Vec::new())
+                        };
+                        let _q = crate::frame_stats::Section::start("home_body");
                         let preview_url = live.first().and_then(|t| {
                             if t.image().map(|i| !i.is_empty()).unwrap_or(false) {
                                 None
