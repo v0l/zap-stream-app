@@ -61,6 +61,7 @@ impl StreamPage {
                 let (rect, _) = ui.allocate_exact_size(vec2(w, video_h), egui::Sense::hover());
                 let mut child = ui.new_child(egui::UiBuilder::new().max_rect(rect));
                 if let Some(player) = &mut self.player {
+                    let _t = crate::frame_stats::Section::start("player");
                     child.add_sized(rect.size(), player);
                 } else {
                     child.add_sized(rect.size(), PlaceholderRect);
@@ -90,6 +91,7 @@ impl StreamPage {
                     vec2(w, remaining),
                     Layout::top_down(Align::Min),
                     |ui| {
+                        let _t = crate::frame_stats::Section::start("chat");
                         if let Some(c) = self.chat.as_mut() {
                             ui.allocate_ui(
                                 vec2(w, (ui.available_height() - chat_h).max(0.0)),

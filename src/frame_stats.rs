@@ -54,3 +54,26 @@ impl FrameStats {
         );
     }
 }
+
+pub struct Section {
+    name: &'static str,
+    start: Instant,
+}
+
+impl Section {
+    pub fn start(name: &'static str) -> Self {
+        Self {
+            name,
+            start: Instant::now(),
+        }
+    }
+}
+
+impl Drop for Section {
+    fn drop(&mut self) {
+        let ms = self.start.elapsed().as_secs_f32() * 1000.0;
+        if ms > 8.0 {
+            log::info!("slow_section {} {:.1}ms", self.name, ms);
+        }
+    }
+}

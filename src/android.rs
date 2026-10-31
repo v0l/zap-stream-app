@@ -21,6 +21,7 @@ pub fn start_android(app: AndroidApp) {
     log::info!("building vulkan setup");
     let options = eframe::NativeOptions {
         android_app: Some(app.clone()),
+        system_font_fallback: false,
         wgpu_options: egui_wgpu::WgpuConfiguration {
             wgpu_setup: egui_wgpu::WgpuSetup::Existing(
                 lumina_video::android_wgpu::android_wgpu_setup().expect("android vulkan setup"),

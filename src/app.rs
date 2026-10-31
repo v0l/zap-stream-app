@@ -203,9 +203,15 @@ impl notedeck::App for ZapStreamApp {
                         self.routes_tx.clone(),
                         &mut self.fetch,
                     );
-                    Header::new().render(ui, &mut svc, &tx);
-                    if let Err(e) = self.widget.update(&mut svc) {
-                        error!("{}", e);
+                    {
+                        let _t = crate::frame_stats::Section::start("header");
+                        Header::new().render(ui, &mut svc, &tx);
+                    }
+                    {
+                        let _t = crate::frame_stats::Section::start("update");
+                        if let Err(e) = self.widget.update(&mut svc) {
+                            error!("{}", e);
+                        }
                     }
                     ui.horizontal_top(|ui| {
                         if wide {
@@ -231,6 +237,7 @@ impl notedeck::App for ZapStreamApp {
                             .show(ui, |ui| {
                                 ui.vertical(|ui| {
                                     ui.spacing_mut().item_spacing = egui::vec2(8.0, 8.0);
+                                    let _t = crate::frame_stats::Section::start("page");
                                     self.widget.render(ui, &mut svc);
                                 });
                             });

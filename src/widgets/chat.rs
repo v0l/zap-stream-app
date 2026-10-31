@@ -16,6 +16,10 @@ pub struct Chat {
     stream: NoteKey,
     events: HashSet<NoteRef>,
     sub: Option<SubRef>,
+    sorted: Vec<NoteRef>,
+    sorted_len: usize,
+    heights: std::collections::HashMap<NoteKey, f32>,
+    measured_width: f32,
 }
 
 impl Chat {
@@ -25,6 +29,10 @@ impl Chat {
             stream,
             events: HashSet::new(),
             sub: None,
+            sorted: Vec::new(),
+            sorted_len: usize::MAX,
+            heights: Default::default(),
+            measured_width: 0.0,
         }
     }
 
@@ -44,45 +52,67 @@ impl NostrWidget for Chat {
             .get_note_by_key(services.tx, self.stream)
             .unwrap();
 
+        if self.sorted_len != self.events.len() {
+            self.sorted = self
+                .events
+                .iter()
+                .copied()
+                .sorted_by(|a, b| a.created_at.cmp(&b.created_at))
+                .collect();
+            self.sorted_len = self.events.len();
+        }
+
+        let width = ui.available_width();
+        if (self.measured_width - width).abs() > 1.0 {
+            self.heights.clear();
+            self.measured_width = width;
+        }
+
+        let estimate = 32.0;
         ScrollArea::vertical()
             .auto_shrink([false, false])
             .stick_to_bottom(true)
-            .show(ui, |ui| {
-                Frame::new()
-                    .outer_margin(Margin::symmetric(12, 8))
-                    .show(ui, |ui| {
-                        ui.vertical(|ui| {
-                            ui.spacing_mut().item_spacing.y = 8.0;
-                            for ev in self
-                                .events
-                                .iter()
-                                .sorted_by(|a, b| a.created_at.cmp(&b.created_at))
-                            {
-                                if let Ok(ev) =
-                                    services.ctx.ndb.get_note_by_key(services.tx, ev.key)
-                                {
-                                    match ev.kind() {
-                                        1311 => {
-                                            let profile = services.profile(ev.pubkey());
-                                            ChatMessage::new(&stream, &ev, &profile)
-                                                .render(ui, services);
-                                        }
-                                        9735 => {
-                                            if let Ok(zap) = Zap::from_receipt(ev) {
-                                                let profile = services.profile(&zap.sender);
-                                                ChatZap::new(&zap, &profile)
-                                                    .render(ui, services.ctx);
-                                            }
-                                        }
-                                        _ => {}
-                                    }
+            .show_viewport(ui, |ui, viewport| {
+                ui.spacing_mut().item_spacing.y = 0.0;
+                let margin = 200.0;
+                let mut y = 0.0;
+                for idx in 0..self.sorted.len() {
+                    let r = self.sorted[idx];
+                    let known = self.heights.get(&r.key).copied();
+                    let h = known.unwrap_or(estimate);
+                    let offscreen =
+                        known.is_some() && (y + h < viewport.min.y - margin || y > viewport.max.y + margin);
+                    if offscreen {
+                        ui.add_space(h);
+                        y += h;
+                        continue;
+                    }
+                    let Ok(ev) = services.ctx.ndb.get_note_by_key(services.tx, r.key) else {
+                        continue;
+                    };
+                    let rect = ui
+                        .scope(|ui| match ev.kind() {
+                            1311 => {
+                                let profile = services.profile(ev.pubkey());
+                                ChatMessage::new(&stream, &ev, &profile).render(ui, services);
+                            }
+                            9735 => {
+                                if let Ok(zap) = Zap::from_receipt(ev) {
+                                    let profile = services.profile(&zap.sender);
+                                    ChatZap::new(&zap, &profile).render(ui, services.ctx);
                                 }
                             }
+                            _ => {}
                         })
-                    })
-                    .response
-            })
-            .inner
+                        .response
+                        .rect;
+                    ui.add_space(8.0);
+                    let measured = rect.height() + 8.0;
+                    self.heights.insert(r.key, measured);
+                    y += measured;
+                }
+            });
+        ui.response()
     }
 
     fn update(&mut self, services: &mut RouteServices<'_, '_>) -> anyhow::Result<()> {
