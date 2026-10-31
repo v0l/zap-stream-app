@@ -161,6 +161,14 @@ class ExoPlayerBridge internal constructor(private val nativeHandle: Long = 0L) 
                     .build()
                     .apply {
                         setVideoScalingMode(androidx.media3.common.C.VIDEO_SCALING_MODE_SCALE_TO_FIT)
+                        setAudioAttributes(
+                            androidx.media3.common.AudioAttributes.Builder()
+                                .setUsage(androidx.media3.common.C.USAGE_MEDIA)
+                                .setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_MOVIE)
+                                .build(),
+                            true
+                        )
+                        setHandleAudioBecomingNoisy(true)
                     }
 
                 player = exoPlayer
