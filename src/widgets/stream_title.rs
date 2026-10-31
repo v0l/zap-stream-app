@@ -1,11 +1,10 @@
 use crate::note_util::NoteUtil;
 use crate::route::RouteServices;
-use crate::stream_info::{StreamInfo, StreamStatus};
-use crate::theme::{MARGIN_DEFAULT, NEUTRAL_900, PRIMARY};
+use crate::stream_info::StreamInfo;
+use crate::theme::{self, MUTED, TEXT, TEXT_SOFT};
 use crate::widgets::zap::ZapButton;
-use crate::widgets::Pill;
-use crate::widgets::Profile;
-use egui::{vec2, Color32, Frame, Label, Response, RichText, TextWrapMode, Ui};
+use crate::widgets::{Avatar, Button};
+use egui::{Frame, Label, Margin, Response, RichText, TextWrapMode, Ui};
 use nostrdb::Note;
 
 pub struct StreamTitle<'a> {
@@ -16,49 +15,73 @@ impl<'a> StreamTitle<'a> {
     pub fn new(event: &'a Note<'a>) -> StreamTitle<'a> {
         StreamTitle { event }
     }
+
     pub fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_, '_>) -> Response {
         Frame::new()
-            .outer_margin(MARGIN_DEFAULT)
+            .inner_margin(Margin::symmetric(0, 8))
             .show(ui, |ui| {
-                ui.spacing_mut().item_spacing = vec2(5., 8.0);
+                ui.spacing_mut().item_spacing = egui::vec2(8., 10.0);
 
-                let title = RichText::new(self.event.title().unwrap_or("Untitled"))
-                    .size(20.)
-                    .color(Color32::WHITE);
-                ui.add(Label::new(title.strong()).wrap_mode(TextWrapMode::Wrap));
+                ui.add(
+                    Label::new(theme::display(
+                        self.event.title().unwrap_or("Untitled"),
+                        30.72,
+                    ))
+                    .wrap_mode(TextWrapMode::Wrap),
+                );
 
                 ui.horizontal(|ui| {
-                    Profile::new(self.event.host())
+                    ui.spacing_mut().item_spacing.x = 10.0;
+                    let profile = services.profile(self.event.host());
+                    Avatar::from_profile(&profile)
                         .size(32.)
-                        .render(ui, services);
+                        .render(ui, services.ctx);
+                    let name = profile
+                        .and_then(|p| p.name())
+                        .unwrap_or("Nostrich")
+                        .to_string();
+                    ui.label(theme::semibold(name, 16.0).color(TEXT));
+                    ui.add_space(8.0);
                     ZapButton::event(self.event).render(ui, services);
                 });
 
-                ui.horizontal(|ui| {
-                    let status = self.event.status().to_string().to_uppercase();
-                    let live_label_color = if self.event.status() == StreamStatus::Live {
-                        PRIMARY
-                    } else {
-                        NEUTRAL_900
-                    };
-                    ui.add(Pill::new(&status).color(live_label_color));
-
-                    ui.add(Pill::new(&format!(
-                        "{} viewers",
-                        self.event.viewers().unwrap_or(0)
-                    )));
-                });
                 if let Some(summary) = self
                     .event
                     .get_tag_value("summary")
                     .and_then(|r| r.variant().str())
                 {
                     if !summary.is_empty() {
-                        let summary = RichText::new(summary).color(Color32::WHITE);
-                        ui.add(Label::new(summary).wrap_mode(TextWrapMode::Wrap));
+                        ui.add(
+                            Label::new(RichText::new(summary).color(TEXT_SOFT))
+                                .wrap_mode(TextWrapMode::Wrap),
+                        );
                     }
+                }
+
+                let tags = self.tags();
+                if !tags.is_empty() {
+                    ui.horizontal_wrapped(|ui| {
+                        ui.spacing_mut().item_spacing.x = 14.0;
+                        for t in tags {
+                            ui.label(theme::medium(t, 15.0).color(MUTED));
+                        }
+                    });
                 }
             })
             .response
+    }
+
+    fn tags(&self) -> Vec<String> {
+        let mut out = Vec::new();
+        for tag in self.event.tags() {
+            if tag.get_unchecked(0).variant().str() == Some("t") {
+                if let Some(v) = tag.get_unchecked(1).variant().str() {
+                    if !v.is_empty() {
+                        out.push(v.to_string());
+                    }
+                }
+            }
+        }
+        out
     }
 }

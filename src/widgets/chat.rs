@@ -45,6 +45,7 @@ impl NostrWidget for Chat {
             .unwrap();
 
         ScrollArea::vertical()
+            .auto_shrink([false, false])
             .stick_to_bottom(true)
             .show(ui, |ui| {
                 Frame::new()

@@ -86,6 +86,39 @@ impl StreamPage {
         ui.response()
     }
 
+    fn chat_panel(&mut self, ui: &mut Ui, services: &mut RouteServices<'_, '_>) {
+        let chat_h = 64.0;
+        ui.vertical(|ui| {
+            ui.spacing_mut().item_spacing = vec2(0., 0.);
+            Frame::new()
+                .inner_margin(egui::Margin {
+                    left: 16,
+                    right: 16,
+                    top: 16,
+                    bottom: 4,
+                })
+                .show(ui, |ui| {
+                    ui.label(crate::theme::semibold("Stream chat", 15.0));
+                });
+            ui.painter().hline(
+                ui.max_rect().x_range(),
+                ui.cursor().top(),
+                Stroke::new(1.0, crate::theme::BORDER),
+            );
+            if let Some(c) = self.chat.as_mut() {
+                ui.allocate_ui(
+                    vec2(ui.available_width(), (ui.available_height() - chat_h).max(0.0)),
+                    |ui| {
+                        c.render(ui, services);
+                    },
+                );
+            } else {
+                ui.label("Loading..");
+            }
+            self.new_msg.render(ui, services);
+        });
+    }
+
     fn render_desktop(
         &mut self,
         event: &Note<'_>,
@@ -93,23 +126,29 @@ impl StreamPage {
         services: &mut RouteServices<'_, '_>,
     ) -> Response {
         let max_h = ui.available_height();
-        let chat_w = 450.0;
-        let video_width = ui.available_width() - chat_w;
+        let chat_w = 398.0;
+        let gap = 24.0;
+        let video_width = ui.available_width() - chat_w - gap;
         let video_height = max_h.min((video_width / 16.0) * 9.0);
 
-        ui.horizontal(|ui| {
+        ui.horizontal_top(|ui| {
+            ui.spacing_mut().item_spacing.x = gap;
             ui.allocate_ui_with_layout(
                 vec2(video_width, max_h),
                 Layout::top_down_justified(Align::Min),
                 |ui| {
                     ScrollArea::vertical().show(ui, |ui| {
+                        let (rect, _) = ui.allocate_exact_size(
+                            vec2(video_width, video_height),
+                            egui::Sense::hover(),
+                        );
+                        let mut child = ui.new_child(egui::UiBuilder::new().max_rect(rect));
                         if let Some(player) = &mut self.player {
-                            ui.add_sized(vec2(video_width, video_height), player);
+                            child.add_sized(rect.size(), player);
                         } else {
-                            ui.add_sized(vec2(video_width, video_height), PlaceholderRect);
+                            child.add_sized(rect.size(), PlaceholderRect);
                         }
-
-                        ui.add_space(10.);
+                        ui.add_space(14.);
                         StreamTitle::new(event).render(ui, services);
                     });
                 },
@@ -118,27 +157,7 @@ impl StreamPage {
                 vec2(chat_w, max_h),
                 Layout::top_down_justified(Align::Min),
                 |ui| {
-                    Frame::new()
-                        .stroke(Stroke::new(1.0, NEUTRAL_800))
-                        .outer_margin(MARGIN_DEFAULT)
-                        .corner_radius(ROUNDING_DEFAULT)
-                        .show(ui, |ui| {
-                            let chat_h = 60.0;
-                            if let Some(c) = self.chat.as_mut() {
-                                ui.allocate_ui(
-                                    vec2(ui.available_width(), ui.available_height() - chat_h),
-                                    |ui| {
-                                        c.render(ui, services);
-                                    },
-                                );
-                            } else {
-                                ui.label("Loading..");
-                            }
-                            if ui.available_height().is_finite() {
-                                ui.add_space(ui.available_height() - chat_h);
-                            }
-                            self.new_msg.render(ui, services);
-                        });
+                    self.chat_panel(ui, services);
                 },
             );
         });

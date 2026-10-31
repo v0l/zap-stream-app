@@ -57,7 +57,7 @@ impl<'a> ZapButton<'a> {
     }
 
     pub fn render(self, ui: &mut Ui, services: &mut RouteServices) -> Response {
-        let resp = Button::new().show(ui, |ui| ui.label("ZAP"));
+        let resp = Button::pill().text(ui, "Zap");
         let open_id = egui::Id::new("zap_modal_open");
         if resp.clicked() {
             ui.ctx().data_mut(|d| d.insert_temp(open_id, true));

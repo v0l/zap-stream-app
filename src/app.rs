@@ -1,8 +1,8 @@
 use crate::profiles::ProfileLoader;
 use crate::route::{page, RouteAction, RouteServices, RouteType};
-use crate::widgets::{Header, NostrWidget};
-use egui::epaint::{FontFamily, Margin};
-use egui::{Color32, FontData, FontDefinitions, Theme, Ui, Visuals};
+use crate::widgets::{Header, NostrWidget, Sidebar};
+use egui::epaint::Margin;
+use egui::Ui;
 use log::{error, info};
 use nostrdb::{Filter, Transaction};
 use notedeck::{
@@ -10,7 +10,7 @@ use notedeck::{
 };
 use poll_promise::Promise;
 use std::collections::HashMap;
-use std::sync::{mpsc, Arc};
+use std::sync::mpsc;
 
 pub struct ZapStreamApp {
     current: RouteType,
@@ -75,16 +75,7 @@ impl ZapStreamApp {
             return;
         }
         self.fonts_set = true;
-        let mut fd = FontDefinitions::default();
-        fd.font_data.insert(
-            "Outfit".to_string(),
-            Arc::new(FontData::from_static(include_bytes!(
-                "../assets/Outfit-Light.ttf"
-            ))),
-        );
-        fd.families
-            .insert(FontFamily::Proportional, vec!["Outfit".to_string()]);
-        ctx.set_fonts(fd);
+        crate::theme::install_fonts(ctx);
     }
 }
 
@@ -111,18 +102,10 @@ fn profiles_sub_identity() -> ScopedSubIdentity {
 impl notedeck::App for ZapStreamApp {
     fn render(&mut self, ctx: &mut AppContext<'_>, ui: &mut Ui) -> AppResponse {
         self.setup_fonts(ui.ctx());
+        crate::theme::apply_style(ui.ctx());
         if let Some(s) = self.frame_stats.as_mut() {
             s.tick();
         }
-
-        ui.ctx().set_visuals_of(
-            Theme::Dark,
-            Visuals {
-                panel_fill: Color32::BLACK,
-                override_text_color: Some(Color32::WHITE),
-                ..Visuals::dark()
-            },
-        );
 
         if let Some(link) = self.startup_link.take() {
             self.widget = Box::new(page::StreamPage::new_from_link(
@@ -178,7 +161,10 @@ impl notedeck::App for ZapStreamApp {
             .frame(app_frame)
             .show(ui, |ui| {
                 let tx = Transaction::new(ctx.ndb).expect("transaction");
+                let wide = ui.available_width() >= crate::theme::WIDE_BREAKPOINT;
+                let on_home = matches!(self.current, RouteType::HomePage);
                 ui.vertical(|ui| {
+                    ui.spacing_mut().item_spacing = egui::Vec2::ZERO;
                     let mut svc = RouteServices::new(
                         egui_ctx,
                         &tx,
@@ -190,7 +176,34 @@ impl notedeck::App for ZapStreamApp {
                     if let Err(e) = self.widget.update(&mut svc) {
                         error!("{}", e);
                     }
-                    self.widget.render(ui, &mut svc);
+                    ui.horizontal_top(|ui| {
+                        if wide {
+                            ui.allocate_ui_with_layout(
+                                egui::vec2(crate::theme::SIDEBAR_WIDTH, ui.available_height()),
+                                egui::Layout::top_down(egui::Align::Min),
+                                |ui| {
+                                    egui::Frame::new()
+                                        .inner_margin(egui::Margin::symmetric(12, 12))
+                                        .show(ui, |ui| {
+                                            Sidebar { active_home: on_home }.render(ui, &mut svc);
+                                        });
+                                },
+                            );
+                        }
+                        egui::Frame::new()
+                            .inner_margin(egui::Margin {
+                                left: if wide { 32 } else { 0 },
+                                right: if wide { 32 } else { 0 },
+                                top: 0,
+                                bottom: 0,
+                            })
+                            .show(ui, |ui| {
+                                ui.vertical(|ui| {
+                                    ui.spacing_mut().item_spacing = egui::vec2(8.0, 8.0);
+                                    self.widget.render(ui, &mut svc);
+                                });
+                            });
+                    });
                 });
             });
 
