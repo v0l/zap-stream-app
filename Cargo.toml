@@ -53,6 +53,3 @@ egui_extras = { git = "https://github.com/v0l/egui", rev = "2f81a2876161a81cea82
 epaint = { git = "https://github.com/v0l/egui", rev = "2f81a2876161a81cea827bdbba8dcdd5b67cdb4a" }
 winit = { git = "https://github.com/damus-io/winit", rev = "151a75954fe210a1792eb71a36f9bdae59cc6f4b" }
 android-activity = { git = "https://github.com/damus-io/android-activity", rev = "642d4b05836f6cc12c3bd775bcf0d1b467e2014d" }
-
-[patch."https://github.com/v0l/lumina-video"]
-lumina-video = { path = "../lumina-video/crates/lumina-video" }
