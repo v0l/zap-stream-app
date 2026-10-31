@@ -1,8 +1,7 @@
 pub const DEFAULT_RELAYS: &[&str] = &[
     "wss://relay.zap.stream",
-    "wss://relay.damus.io",
-    "wss://nos.lol",
     "wss://relay.primal.net",
+    "wss://relay.damus.io",
 ];
 
 pub fn args(mut base: Vec<String>) -> Vec<String> {
