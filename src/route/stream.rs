@@ -48,39 +48,59 @@ impl StreamPage {
         ui: &mut Ui,
         services: &mut RouteServices<'_, '_>,
     ) -> Response {
-        let chat_h = 60.0;
+        let chat_h = 64.0;
         let w = ui.available_width();
-        let h = ui
-            .available_height()
-            .max(ui.available_rect_before_wrap().height());
+        let h = ui.available_height();
+        let margin = 16.0;
         ui.allocate_ui_with_layout(
             Vec2::new(w, h),
-            Layout::top_down_justified(Align::Min),
+            Layout::top_down(Align::Min),
             |ui| {
-                let video_h =
-                    ((ui.available_width() / 16.0) * 9.0).min(ui.available_height() * 0.33);
-                ui.allocate_ui(vec2(ui.available_width(), video_h), |ui| {
-                    if let Some(player) = &mut self.player {
-                        player.ui(ui)
-                    } else {
-                        ui.add(PlaceholderRect)
-                    }
-                });
-                StreamTitle::new(event).render(ui, services);
-
-                if let Some(c) = self.chat.as_mut() {
-                    ui.allocate_ui(
-                        vec2(ui.available_width(), ui.available_height() - chat_h),
-                        |ui| c.render(ui, services),
-                    );
+                ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
+                let video_h = (w / 16.0) * 9.0;
+                let (rect, _) = ui.allocate_exact_size(vec2(w, video_h), egui::Sense::hover());
+                let mut child = ui.new_child(egui::UiBuilder::new().max_rect(rect));
+                if let Some(player) = &mut self.player {
+                    child.add_sized(rect.size(), player);
                 } else {
-                    ui.label("Loading..");
+                    child.add_sized(rect.size(), PlaceholderRect);
                 }
-                // consume rest of space
-                if ui.available_height().is_finite() {
-                    ui.add_space(ui.available_height() - chat_h);
-                }
-                self.new_msg.render(ui, services);
+
+                let info_h = (h - video_h) * 0.38;
+                ScrollArea::vertical()
+                    .id_salt("stream-info")
+                    .max_height(info_h)
+                    .auto_shrink([false, true])
+                    .show(ui, |ui| {
+                        Frame::new()
+                            .inner_margin(egui::Margin::symmetric(margin as i8, 8))
+                            .show(ui, |ui| {
+                                ui.set_width(w - margin * 2.0);
+                                StreamTitle::new(event).render(ui, services);
+                            });
+                    });
+
+                ui.painter().hline(
+                    ui.max_rect().x_range(),
+                    ui.cursor().top(),
+                    Stroke::new(1.0, crate::theme::BORDER),
+                );
+                let remaining = ui.available_height();
+                ui.allocate_ui_with_layout(
+                    vec2(w, remaining),
+                    Layout::top_down(Align::Min),
+                    |ui| {
+                        if let Some(c) = self.chat.as_mut() {
+                            ui.allocate_ui(
+                                vec2(w, (ui.available_height() - chat_h).max(0.0)),
+                                |ui| c.render(ui, services),
+                            );
+                        } else {
+                            ui.label("Loading..");
+                        }
+                        self.new_msg.render(ui, services);
+                    },
+                );
             },
         );
         ui.response()

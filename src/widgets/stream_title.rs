@@ -22,13 +22,16 @@ impl<'a> StreamTitle<'a> {
             .show(ui, |ui| {
                 ui.spacing_mut().item_spacing = egui::vec2(8., 10.0);
 
-                ui.add(
-                    Label::new(theme::display(
-                        self.event.title().unwrap_or("Untitled"),
-                        30.72,
-                    ))
-                    .wrap_mode(TextWrapMode::Wrap),
-                );
+                let size = if ui.available_width() < 560.0 { 24.0 } else { 30.72 };
+                ui.with_layout(egui::Layout::top_down(egui::Align::Min), |ui| {
+                    ui.add(
+                        Label::new(theme::display(
+                            self.event.title().unwrap_or("Untitled"),
+                            size,
+                        ))
+                        .wrap_mode(TextWrapMode::Wrap),
+                    );
+                });
 
                 ui.horizontal(|ui| {
                     ui.spacing_mut().item_spacing.x = 10.0;
@@ -51,10 +54,12 @@ impl<'a> StreamTitle<'a> {
                     .and_then(|r| r.variant().str())
                 {
                     if !summary.is_empty() {
-                        ui.add(
-                            Label::new(RichText::new(summary).color(TEXT_SOFT))
-                                .wrap_mode(TextWrapMode::Wrap),
-                        );
+                        ui.with_layout(egui::Layout::top_down(egui::Align::Min), |ui| {
+                            ui.add(
+                                Label::new(RichText::new(summary).color(TEXT_SOFT))
+                                    .wrap_mode(TextWrapMode::Wrap),
+                            );
+                        });
                     }
                 }
 

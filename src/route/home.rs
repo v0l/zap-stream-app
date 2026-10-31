@@ -35,6 +35,13 @@ impl HomePage {
             "Gambling",
             "Science & Technology",
         ];
+        let width = ui.available_width();
+        egui::ScrollArea::horizontal()
+            .id_salt("category-tabs")
+            .max_width(width)
+            .auto_shrink([false, true])
+            .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysHidden)
+            .show(ui, |ui| {
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 24.0;
             for (i, t) in TABS.iter().enumerate() {
@@ -51,6 +58,7 @@ impl HomePage {
                 }
             }
         });
+            });
         let y = ui.cursor().top() - 4.0;
         ui.painter().hline(
             ui.max_rect().x_range(),

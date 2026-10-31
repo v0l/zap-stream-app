@@ -88,11 +88,14 @@ impl<'a> Hero<'a> {
         y -= meta.size().y;
         painter.galley(pos2(rect.min.x + pad, y), meta, Color32::PLACEHOLDER);
 
+        let narrow = w < 560.0;
+        let title_size = if narrow { 26.0 } else { 46.08 };
+        let title_width = if narrow { w - pad * 2.0 } else { (w * 0.55).max(200.0) };
         let title = painter.layout(
             self.event.title().unwrap_or("Untitled").to_string(),
-            egui::FontId::new(46.08, theme::display_family()),
+            egui::FontId::new(title_size, theme::display_family()),
             TEXT,
-            (w * 0.55).max(200.0),
+            title_width,
         );
         y -= title.size().y + 6.0;
         painter.galley(pos2(rect.min.x + pad, y), title, Color32::PLACEHOLDER);

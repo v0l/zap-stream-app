@@ -2,8 +2,7 @@ use crate::note_view::NotesView;
 use crate::route::RouteServices;
 use crate::stream_info::StreamInfo;
 use crate::widgets::stream_tile::StreamEvent;
-use egui::{vec2, Frame, Grid, Response, Ui, WidgetText};
-use itertools::Itertools;
+use egui::{vec2, Frame, Response, Ui, WidgetText};
 
 pub struct StreamList<'a> {
     id: egui::Id,
@@ -42,24 +41,28 @@ impl<'a> StreamList<'a> {
                 if let Some(heading) = self.heading.take() {
                     ui.label(heading);
                 }
-                Grid::new(self.id)
-                    .spacing(vec2(grid_padding, grid_padding))
-                    .show(ui, |ui| {
-                        let mut ctr = 0;
-                        for event in self.streams.iter().sorted_by(|a, b| {
-                            a.status()
-                                .cmp(&b.status())
-                                .then(a.starts().cmp(&b.starts()).reverse())
-                        }) {
-                            ui.allocate_ui(vec2(g_w, (g_w / 16.0) * 9.0), |ui| {
-                                StreamEvent::new(event).render(ui, services)
-                            });
-                            ctr += 1;
-                            if ctr % cols == 0 {
-                                ui.end_row();
-                            }
+                let mut events: Vec<_> = self.streams.iter().collect();
+                events.sort_by(|a, b| {
+                    a.status()
+                        .cmp(&b.status())
+                        .then(a.starts().cmp(&b.starts()).reverse())
+                });
+                for row in events.chunks(cols as usize) {
+                    ui.horizontal_top(|ui| {
+                        ui.spacing_mut().item_spacing.x = grid_padding;
+                        for event in row {
+                            ui.allocate_ui_with_layout(
+                                vec2(g_w, 0.0),
+                                egui::Layout::top_down(egui::Align::Min),
+                                |ui| {
+                                    ui.set_width(g_w);
+                                    StreamEvent::new(event).render(ui, services);
+                                },
+                            );
                         }
-                    })
+                    });
+                    ui.add_space(grid_padding - 8.0);
+                }
             })
             .response
     }
