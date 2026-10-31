@@ -60,14 +60,48 @@ impl Header {
                                 && !is_fallback(&acc.key.pubkey));
                         if logged_in {
                             let pubkey = acc.key.pubkey;
-                            if Avatar::pubkey(pubkey.bytes(), services.ctx.ndb, tx)
+                            let avatar = Avatar::pubkey(pubkey.bytes(), services.ctx.ndb, tx)
                                 .size(32.)
-                                .render(ui, services.ctx)
-                                .clicked()
-                            {
-                                services.navigate(RouteType::ProfilePage {
-                                    link: NostrLink::profile(pubkey.bytes()),
-                                })
+                                .render(ui, services.ctx);
+                            let profile = services.profile(pubkey.bytes());
+                            let name = profile
+                                .and_then(|p| p.display_name().or(p.name()))
+                                .unwrap_or("Nostrich")
+                                .to_string();
+                            let mut action = None;
+                            egui::Popup::menu(&avatar)
+                                .id(egui::Id::new("account-menu"))
+                                .show(|ui| {
+                                    ui.set_min_width(220.0);
+                                    ui.spacing_mut().item_spacing.y = 4.0;
+                                    ui.label(theme::semibold(&name, 15.0));
+                                    ui.label(
+                                        theme::medium(
+                                            format!("{}...", &pubkey.hex()[..12]),
+                                            12.5,
+                                        )
+                                        .color(MUTED),
+                                    );
+                                    ui.separator();
+                                    if Button::new().text(ui, "Profile").clicked() {
+                                        action = Some("profile");
+                                        ui.close();
+                                    }
+                                    if Button::new().text(ui, "Logout").clicked() {
+                                        action = Some("logout");
+                                        ui.close();
+                                    }
+                                });
+                            match action {
+                                Some("profile") => {
+                                    services.navigate(RouteType::ProfilePage {
+                                        link: NostrLink::profile(pubkey.bytes()),
+                                    });
+                                }
+                                Some("logout") => {
+                                    services.action(crate::route::RouteAction::Logout(pubkey));
+                                }
+                                _ => {}
                             }
                         } else {
                             let clicked = ui

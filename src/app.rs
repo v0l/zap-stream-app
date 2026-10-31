@@ -160,6 +160,11 @@ impl notedeck::App for ZapStreamApp {
                     RouteAction::SelectAccount(pk) => {
                         ctx.select_account(&pk);
                     }
+                    RouteAction::Logout(pk) => {
+                        ctx.remove_account(&pk);
+                        self.widget = Box::new(page::HomePage::new(self.render_state.clone()));
+                        self.current = RouteType::HomePage;
+                    }
                 }
             } else {
                 self.current = r;

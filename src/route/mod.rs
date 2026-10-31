@@ -48,6 +48,7 @@ pub enum RouteType {
 pub enum RouteAction {
     DemandProfile([u8; 32]),
     SelectAccount(enostr::Pubkey),
+    Logout(enostr::Pubkey),
 }
 
 pub struct RouteServices<'a, 'ctx> {
