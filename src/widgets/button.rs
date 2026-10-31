@@ -13,6 +13,7 @@ pub struct Button {
     disabled: bool,
     padding: Margin,
     radius: u8,
+    full_width: bool,
 }
 
 impl Button {
@@ -23,6 +24,7 @@ impl Button {
             disabled: false,
             padding: Margin::symmetric(12, 8),
             radius: 12,
+            full_width: false,
         }
     }
 
@@ -38,6 +40,16 @@ impl Button {
             radius: 255,
             ..Self::new()
         }
+    }
+
+    pub fn full_width(mut self) -> Self {
+        self.full_width = true;
+        self
+    }
+
+    pub fn radius(mut self, radius: u8) -> Self {
+        self.radius = radius;
+        self
     }
 
     pub fn padding(mut self, padding: Margin) -> Self {
@@ -61,8 +73,19 @@ impl Button {
 
     pub fn text(self, ui: &mut Ui, text: &str) -> Response {
         let (_, text_color) = self.colors();
+        let full = self.full_width;
+        let inset = (self.padding.left + self.padding.right) as f32;
         self.show(ui, |ui| {
-            ui.label(theme::medium(text, theme::FONT_SIZE).color(text_color))
+            if full {
+                ui.set_min_width((ui.available_width() - inset).max(0.0));
+                ui.with_layout(
+                    egui::Layout::top_down(egui::Align::Center),
+                    |ui| ui.label(theme::medium(text, theme::FONT_SIZE).color(text_color)),
+                )
+                .inner
+            } else {
+                ui.label(theme::medium(text, theme::FONT_SIZE).color(text_color))
+            }
         })
     }
 

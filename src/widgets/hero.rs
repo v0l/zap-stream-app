@@ -16,7 +16,13 @@ impl<'a> Hero<'a> {
         Self { event }
     }
 
-    pub fn render(&mut self, ui: &mut Ui, services: &mut RouteServices<'_, '_>, height: f32) {
+    pub fn render(
+        &mut self,
+        ui: &mut Ui,
+        services: &mut RouteServices<'_, '_>,
+        height: f32,
+        preview: Option<&mut crate::widgets::StreamPlayer>,
+    ) {
         let w = ui.available_width();
         let (response, painter) = ui.allocate_painter(vec2(w, height), Sense::click());
         let rect = response.rect;
@@ -31,7 +37,14 @@ impl<'a> Hero<'a> {
                 Some(vec2(w, height)),
             )
         });
+        let has_cover = cover.is_some();
         paint_cover(ui, &painter, rect, radius, cover);
+        if !has_cover {
+            if let Some(p) = preview {
+                p.show_in(ui, rect);
+                crate::widgets::stream_player::mask_corners(ui, rect, radius as f32);
+            }
+        }
 
         let fade = Rect::from_min_max(pos2(rect.min.x, rect.max.y - height * 0.65), rect.max);
         let mut mesh = Mesh::default();

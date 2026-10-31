@@ -10,7 +10,7 @@ mod placeholder_rect;
 mod profile;
 mod sidebar;
 mod stream_list;
-mod stream_player;
+pub(crate) mod stream_player;
 pub(crate) mod stream_tile;
 mod stream_title;
 mod text_input;

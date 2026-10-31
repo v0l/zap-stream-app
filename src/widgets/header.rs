@@ -83,7 +83,10 @@ impl Header {
 
                         if wide {
                             let w = (ui.available_width() - 32.0).clamp(0.0, 410.0);
-                            let mut query = String::new();
+                            let qid = egui::Id::new("search-query");
+                            let mut query: String =
+                                ui.ctx().data(|d| d.get_temp(qid)).unwrap_or_default();
+                            let before = query.clone();
                             Frame::new()
                                 .fill(SURFACE_LOW)
                                 .stroke(Stroke::new(1.0, BORDER))
@@ -102,6 +105,9 @@ impl Header {
                                             .desired_width(f32::INFINITY),
                                     );
                                 });
+                            if query != before {
+                                ui.ctx().data_mut(|d| d.insert_temp(qid, query));
+                            }
                         }
                     });
                 });

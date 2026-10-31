@@ -4,7 +4,7 @@ use egui::{CursorIcon, Frame, Margin, Response, Sense, Ui, Vec2};
 
 struct Item {
     label: &'static str,
-    glyph: &'static str,
+    icon: &'static [u8],
     active: bool,
     route: Option<RouteType>,
 }
@@ -26,25 +26,25 @@ impl Sidebar {
         let items = [
             Item {
                 label: "Streams",
-                glyph: "\u{25CF}",
+                icon: include_bytes!("../resources/icons/signal.svg"),
                 active: self.active_home,
                 route: Some(RouteType::HomePage),
             },
             Item {
                 label: "Videos",
-                glyph: "\u{25B6}",
+                icon: include_bytes!("../resources/icons/play.svg"),
                 active: false,
                 route: None,
             },
             Item {
                 label: "Shorts",
-                glyph: "\u{25A0}",
+                icon: include_bytes!("../resources/icons/film.svg"),
                 active: false,
                 route: None,
             },
             Item {
                 label: "Categories",
-                glyph: "\u{25A6}",
+                icon: include_bytes!("../resources/icons/grid.svg"),
                 active: false,
                 route: None,
             },
@@ -72,7 +72,13 @@ impl Sidebar {
                 ui.set_width(ui.available_width());
                 ui.horizontal(|ui| {
                     ui.spacing_mut().item_spacing = Vec2::new(10., 0.);
-                    ui.label(theme::medium(item.glyph, 12.0).color(color));
+                    let uri = format!("bytes://nav-{}-{}.svg", item.label, item.active);
+                    let svg = String::from_utf8_lossy(item.icon)
+                        .replace("currentColor", &format!("#{:02x}{:02x}{:02x}", color.r(), color.g(), color.b()));
+                    ui.add(
+                        egui::Image::from_bytes(uri, svg.into_bytes())
+                            .fit_to_exact_size(Vec2::splat(20.0)),
+                    );
                     ui.label(theme::medium(item.label, 16.0).color(color));
                 });
             });

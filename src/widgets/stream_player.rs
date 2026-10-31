@@ -18,8 +18,34 @@ impl StreamPlayer {
         }
     }
 
+    pub fn preview(render_state: Option<&egui_wgpu::RenderState>, url: &str) -> Self {
+        let player = render_state.map(|rs| {
+            VideoPlayer::with_wgpu(url, rs)
+                .with_autoplay(true)
+                .with_muted(true)
+                .with_controls(false)
+        });
+        Self {
+            player,
+            url: url.to_string(),
+        }
+    }
+
     pub fn url(&self) -> &str {
         &self.url
+    }
+}
+
+impl StreamPlayer {
+    pub fn show_in(&mut self, ui: &mut Ui, rect: Rect) -> bool {
+        match self.player.as_mut() {
+            Some(p) => {
+                let mut child = ui.new_child(egui::UiBuilder::new().max_rect(rect));
+                p.show(&mut child, rect.size());
+                true
+            }
+            None => false,
+        }
     }
 }
 
@@ -37,7 +63,7 @@ impl Widget for &mut StreamPlayer {
     }
 }
 
-fn mask_corners(ui: &Ui, rect: Rect, r: f32) {
+pub fn mask_corners(ui: &Ui, rect: Rect, r: f32) {
     let painter = ui.painter();
     let steps = 8;
     let corners: [(Pos2, f32, f32); 4] = [

@@ -69,9 +69,10 @@ impl<'a> ZapButton<'a> {
 
         let modal = egui::Modal::new(egui::Id::new("zapper")).frame(
             Frame::new()
-                .fill(NEUTRAL_900)
-                .corner_radius(ROUNDING_DEFAULT as u8)
-                .inner_margin(MARGIN_DEFAULT),
+                .fill(crate::theme::SURFACE_LOW)
+                .stroke(egui::Stroke::new(1.0, crate::theme::SURFACE))
+                .corner_radius(16)
+                .inner_margin(egui::Margin::same(24)),
         );
         let modal_resp = modal.show(ui.ctx(), |ui| {
             ui.set_width(360.0);
@@ -167,9 +168,9 @@ impl<'a> ZapButton<'a> {
         };
         let fallback_name = self.target.to_string();
         let target_name = target_name.unwrap_or(&fallback_name);
-        ui.label(RichText::new(format!("Zap {}", target_name)).size(FONT_SIZE_LG));
+        ui.label(crate::theme::display_bold_text(format!("Zap {}", target_name), 26.0));
 
-        ui.label("Zap amount in sats");
+        ui.label(crate::theme::medium("Zap amount in sats", 14.0).color(crate::theme::MUTED));
 
         // amount buttons
         const SATS_AMOUNTS: &[u64] = &[
@@ -183,10 +184,11 @@ impl<'a> ZapButton<'a> {
             for x in SATS_AMOUNTS {
                 if Button::new()
                     .with_color(if selected_amount == *x {
-                        NEUTRAL_700
+                        PRIMARY
                     } else {
                         NEUTRAL_800
                     })
+                    .padding(egui::Margin::symmetric(10, 8))
                     .text(ui, &format_sats(*x as f32))
                     .clicked()
                 {
@@ -201,13 +203,13 @@ impl<'a> ZapButton<'a> {
 
         // comment section
         let mut zap_comment = services.get("zap_comment").unwrap_or(String::new());
-        ui.label(format!("Your comment for {}", target_name));
+        ui.label(crate::theme::medium(format!("Your comment for {}", target_name), 14.0).color(crate::theme::MUTED));
         let old_len = zap_comment.len();
         NativeTextInput::new(&mut zap_comment)
             .with_frame(true)
             .ui(ui);
 
-        if Button::new().with_color(PRIMARY).text(ui, "Zap!").clicked() {
+        if Button::primary().radius(255).padding(egui::Margin::symmetric(24, 10)).text(ui, "Zap").clicked() {
             // on-click setup callback URL and transition state
             match self.zap_callback(
                 services,

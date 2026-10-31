@@ -26,6 +26,7 @@ pub struct ZapStreamApp {
     fonts_set: bool,
     frame_stats: Option<crate::frame_stats::FrameStats>,
     startup_link: Option<crate::link::NostrLink>,
+    startup_page: Option<String>,
     render_state: Option<egui_wgpu::RenderState>,
 }
 
@@ -35,7 +36,7 @@ impl ZapStreamApp {
         let (tx, rx) = mpsc::channel();
         Self {
             current: RouteType::HomePage,
-            widget: Box::new(page::HomePage::new()),
+            widget: Box::new(page::HomePage::new(render_state.clone())),
             profiles: ProfileLoader::new(),
             routes_tx: tx,
             routes_rx: rx,
@@ -43,6 +44,7 @@ impl ZapStreamApp {
             fonts_set: false,
             frame_stats: crate::frame_stats::FrameStats::enabled(),
             startup_link: startup_link_from_env(),
+            startup_page: None,
             render_state,
             app,
         }
@@ -58,7 +60,7 @@ impl ZapStreamApp {
         let (tx, rx) = mpsc::channel();
         Self {
             current: RouteType::HomePage,
-            widget: Box::new(page::HomePage::new()),
+            widget: Box::new(page::HomePage::new(render_state.clone())),
             profiles: ProfileLoader::new(),
             routes_tx: tx,
             routes_rx: rx,
@@ -66,6 +68,7 @@ impl ZapStreamApp {
             fonts_set: false,
             frame_stats: crate::frame_stats::FrameStats::enabled(),
             startup_link: startup_link_from_env(),
+            startup_page: None,
             render_state,
         }
     }
@@ -107,6 +110,31 @@ impl notedeck::App for ZapStreamApp {
             s.tick();
         }
 
+        if let Ok(v) = std::env::var("ZAP_STREAM_PAGE") {
+            if self.startup_page.is_none() {
+                self.startup_page = Some(v);
+            }
+        }
+        if let Some(page_name) = self.startup_page.take() {
+            match page_name.as_str() {
+                "login" => {
+                    self.widget = Box::new(page::LoginPage::new());
+                    self.current = RouteType::LoginPage;
+                }
+                other => {
+                    if let Some(hex) = other.strip_prefix("profile:") {
+                        if let Ok(pk) = nostr::prelude::hex::decode(hex) {
+                            if let Ok(pk) = <[u8; 32]>::try_from(pk.as_slice()) {
+                                let link = crate::link::NostrLink::profile(&pk);
+                                self.widget = Box::new(page::ProfilePage::new(pk));
+                                self.current = RouteType::ProfilePage { link };
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         if let Some(link) = self.startup_link.take() {
             self.widget = Box::new(page::StreamPage::new_from_link(
                 link.clone(),
@@ -134,7 +162,7 @@ impl notedeck::App for ZapStreamApp {
                 self.current = r;
                 match &self.current {
                     RouteType::HomePage => {
-                        self.widget = Box::new(page::HomePage::new());
+                        self.widget = Box::new(page::HomePage::new(self.render_state.clone()));
                     }
                     RouteType::EventPage { link, .. } => {
                         self.widget = Box::new(page::StreamPage::new_from_link(

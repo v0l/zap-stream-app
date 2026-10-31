@@ -40,6 +40,8 @@ pub trait StreamInfo {
     fn status(&self) -> StreamStatus;
 
     fn viewers(&self) -> Option<u32>;
+
+    fn hashtags(&self) -> Vec<String>;
 }
 
 impl StreamInfo for Note<'_> {
@@ -135,5 +137,19 @@ impl StreamInfo for Note<'_> {
         } else {
             None
         }
+    }
+
+    fn hashtags(&self) -> Vec<String> {
+        let mut out = Vec::new();
+        for tag in self.tags() {
+            if tag.get_unchecked(0).variant().str() == Some("t") {
+                if let Some(v) = tag.get_unchecked(1).variant().str() {
+                    if !v.is_empty() {
+                        out.push(v.to_lowercase());
+                    }
+                }
+            }
+        }
+        out
     }
 }

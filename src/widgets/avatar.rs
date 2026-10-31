@@ -7,6 +7,7 @@ use notedeck::AppContext;
 pub struct Avatar {
     image: Option<String>,
     size: Option<f32>,
+    ring: Option<egui::Color32>,
 }
 
 impl Avatar {
@@ -14,6 +15,7 @@ impl Avatar {
         Self {
             image: img.map(String::from),
             size: None,
+            ring: None,
         }
     }
 
@@ -25,6 +27,7 @@ impl Avatar {
         Self {
             image: picture.map(|s| s.to_string()),
             size: None,
+            ring: None,
         }
     }
 
@@ -33,7 +36,13 @@ impl Avatar {
         Self {
             image: img.map(String::from),
             size: None,
+            ring: None,
         }
+    }
+
+    pub fn ring(mut self, color: egui::Color32) -> Self {
+        self.ring = Some(color);
+        self
     }
 
     pub fn size(mut self, size: f32) -> Self {
@@ -49,6 +58,19 @@ impl Avatar {
     }
 
     pub fn render(self, ui: &mut Ui, ctx: &mut AppContext<'_>) -> Response {
+        let ring = self.ring;
+        let r = self.render_inner(ui, ctx);
+        if let Some(c) = ring {
+            ui.painter().circle_stroke(
+                r.rect.center(),
+                r.rect.width() / 2.0 - 2.0,
+                egui::Stroke::new(4.0, c),
+            );
+        }
+        r
+    }
+
+    fn render_inner(self, ui: &mut Ui, ctx: &mut AppContext<'_>) -> Response {
         let size_v = self.size.unwrap_or(40.);
         let size = Vec2::new(size_v, size_v);
         if !ui.is_rect_visible(ui.cursor()) {
