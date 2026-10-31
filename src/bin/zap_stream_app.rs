@@ -24,7 +24,7 @@ async fn main() -> Result<()> {
         "zap.stream",
         options,
         Box::new(move |cc| {
-            let args: Vec<String> = std::env::args().collect();
+            let args = zap_stream_app::relays::args(std::env::args().collect());
             let mut notedeck = Notedeck::init(&cc.egui_ctx, data_path.clone(), &args);
             notedeck.setup(&cc.egui_ctx);
             notedeck.set_app(ZapStreamApp::new(cc.wgpu_render_state.clone()));

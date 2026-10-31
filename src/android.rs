@@ -35,7 +35,7 @@ pub fn start_android(app: AndroidApp) {
         options,
         Box::new(move |cc| {
             log::info!("app creator called");
-            let args = vec!["argv0-placeholder".to_string()];
+            let args = crate::relays::args(vec!["argv0-placeholder".to_string()]);
             let mut notedeck = Notedeck::init(&cc.egui_ctx, data_path.clone(), &args);
             notedeck.set_android_context(app.clone());
             notedeck.setup(&cc.egui_ctx);
