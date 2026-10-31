@@ -7,6 +7,6 @@ metadata:
   namespace: git
 steps:
   - name: build_debian
-    image: rust:bookworm
+    image: rust:trixie
     commands:
       - ./debian.sh
